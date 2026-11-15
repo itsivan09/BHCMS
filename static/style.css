@@ -1,0 +1,349 @@
+/* Global Dashboard Styling - Medical Clean Design */
+:root {
+    --bg: #ffffff;
+    --card: #ffffff;
+    --muted: #7f8c8d;
+    --accent: #1abc9c;
+    --danger: #e74c3c;
+    --good: #27ae60;
+    --success: #27ae60;
+    --warning: #f39c12;
+    --info: #3498db;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --border-radius: 8px;
+}
+
+html, body { 
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: #f8f9fa;
+    font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    color: #2c3e50;
+    margin: 0;
+    padding: 1rem;
+    min-height: 100vh;
+}
+
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.dashboard-header {
+    text-align: left;
+    margin-bottom: 2rem;
+}
+
+.dashboard-header h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-subtitle {
+    color: #7f8c8d;
+    font-size: 0.95rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: var(--card);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #ecf0f1;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--accent);
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card.primary::before { background: var(--info); }
+.stat-card.warning::before { background: var(--warning); }
+.stat-card.danger::before { background: var(--danger); }
+
+.stat-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.8;
+    color: var(--accent);
+}
+
+.stat-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #7f8c8d;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: #2c3e50;
+}
+
+.alert-custom {
+    border-radius: var(--border-radius);
+    border: 1px solid #e74c3c;
+    box-shadow: var(--shadow);
+    padding: 1.25rem;
+    margin-top: 2rem;
+    background: rgba(231, 76, 60, 0.05);
+    border-left: 4px solid var(--danger);
+}
+
+.alert-custom .alert-title {
+    font-weight: 600;
+    color: var(--danger);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.alert-custom ul {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.alert-custom li {
+    margin-bottom: 0.5rem;
+    color: #34495e;
+}
+
+.inventory-container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.inventory-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.inventory-header h2 {
+    margin: 0;
+    font-size: 1.75rem;
+    color: #2c3e50;
+}
+
+.inventory-header .muted {
+    color: var(--muted);
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.inventory-actions {
+    display: flex;
+    align-items: center;
+}
+
+.inventory-actions input {
+    width: 220px;
+}
+
+.inventory-card {
+    background: var(--card);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.inventory-card .card-body {
+    padding: 0;
+}
+
+.table-head {
+    background: #f8f9fa;
+    border-bottom: 2px solid #ecf0f1;
+}
+
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table tbody tr {
+    background: transparent;
+}
+
+.table tbody tr:nth-child(odd) {
+    background: rgba(26, 188, 156, 0.02);
+}
+
+.table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+/* FORCE DARK TEXT FOR ALL TABLE CONTENT - UPDATED FIX */
+.table tbody td, 
+.table tbody th,
+.table tbody td *,       
+.table tbody td span, 
+.table tbody td p,
+.table tbody td div,
+.table tbody td a,
+.table tbody td .badge,
+.table tbody td small {
+    color: #2c3e50 !important; /* Force Dark Grey */
+    text-shadow: none !important;
+    opacity: 1 !important;
+}
+
+/* Specific Override: Kung naggamit siyag 'text-white' o 'text-light' classes */
+.table tbody td .text-white,
+.table tbody td .text-light,
+.table tbody td .text-muted {
+    color: #2c3e50 !important;
+}
+
+/* Fix sa Purok kung badge style siya */
+.table tbody td .badge {
+    color: #2c3e50 !important;
+    background-color: transparent !important; /* Tangtangon ang background kung naa */
+    border: 1px solid #ccc !important; /* Butangan og border para makita */
+}
+
+/* Keep the link hover effect distinct */
+.table tbody td a:hover {
+    color: #0e7c86 !important;
+    text-decoration: underline;
+}
+
+.table th {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.85rem;
+    background: #f8f9fa;
+    border-bottom: 2px solid #ecf0f1;
+}
+
+.fw-medium {
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.35rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-low {
+    background: rgba(231, 76, 60, 0.1);
+    color: var(--danger);
+    border: 1px solid rgba(231, 76, 60, 0.2);
+}
+
+.badge-good {
+    background: rgba(39, 174, 96, 0.1);
+    color: var(--good);
+    border: 1px solid rgba(39, 174, 96, 0.2);
+}
+
+/* Utility Classes */
+.text-end {
+    text-align: right;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-muted {
+    color: var(--muted);
+}
+
+.me-2 {
+    margin-right: 0.5rem;
+}
+
+.mt-3 {
+    margin-top: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .inventory-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .inventory-actions {
+        width: 100%;
+        gap: 0.5rem;
+    }
+    
+    .inventory-actions input {
+        width: 100%;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Navbar Styling */
+.navbar {
+    background-color: #0e7c86 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white !important;
+}
+
+.nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+    transition: color 0.3s ease;
+    margin: 0 0.5rem;
+}
+
+.nav-link:hover {
+    color: white !important;
+}
+
+.navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}

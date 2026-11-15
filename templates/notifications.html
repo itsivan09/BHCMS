@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - BHCMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Header -->
+            <div class="mb-4">
+                <h1 class="mb-2">
+                    <i class="fas fa-bell text-primary me-2"></i>Notifications
+                </h1>
+                <p class="text-muted">All system alerts and updates</p>
+            </div>
+
+            <!-- Notifications List -->
+            {% if notifications %}
+                <div class="notifications-list">
+                    {% for notification in notifications %}
+                        <div class="notification-card {% if not notification.is_read %}unread{% endif %}" id="notification-{{ notification.id }}">
+                            <div class="notification-content">
+                                <div class="notification-header">
+                                    <h5 class="notification-title mb-1">
+                                        {% if notification.type == 'low_stock' %}
+                                            <i class="fas fa-warning text-warning me-2"></i>
+                                        {% elif notification.type == 'expired_item' %}
+                                            <i class="fas fa-exclamation-circle text-danger me-2"></i>
+                                        {% elif notification.type == 'expiring_soon' %}
+                                            <i class="fas fa-clock text-warning me-2"></i>
+                                        {% else %}
+                                            <i class="fas fa-info-circle text-info me-2"></i>
+                                        {% endif %}
+                                        {{ notification.title }}
+                                    </h5>
+                                    <small class="text-muted">
+                                        {{ notification.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                    </small>
+                                </div>
+
+                                <p class="notification-message mb-3">
+                                    {{ notification.message }}
+                                </p>
+
+                                <div class="notification-actions">
+                                    {% if not notification.is_read %}
+                                        <button type="button" class="btn btn-sm btn-primary" onclick="markAsRead({{ notification.id }})">
+                                            <i class="fas fa-check me-1"></i>Mark as Read
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-bell-slash"></i>
+                    </div>
+                    <h3>No Notifications</h3>
+                    <p class="text-muted">You're all caught up! No new notifications at this time.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Notification Styling -->
+<style>
+    .notifications-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .notification-card {
+        background: #ffffff;
+        border: 1px solid #ecf0f1;
+        border-radius: 8px;
+        padding: 20px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .notification-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .notification-card.unread {
+        background: rgba(26, 188, 156, 0.02);
+        border-color: #1abc9c;
+        border-left: 4px solid #1abc9c;
+    }
+
+    .notification-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+    }
+
+    .notification-title {
+        color: #2c3e50;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .notification-message {
+        color: #5d6d7b;
+        line-height: 1.6;
+        font-size: 15px;
+    }
+
+    .notification-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: #7f8c8d;
+    }
+
+    .empty-state-icon {
+        font-size: 48px;
+        color: #1abc9c;
+        margin-bottom: 24px;
+        opacity: 0.5;
+    }
+
+    .empty-state h3 {
+        color: #2c3e50;
+        margin-bottom: 12px;
+    }
+</style>
+
+<!-- Mark as Read Script -->
+<script>
+function markAsRead(notificationId) {
+    fetch(`/mark_notification_read/${notificationId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const notificationCard = document.getElementById(`notification-${notificationId}`);
+            if (notificationCard) {
+                notificationCard.classList.remove('unread');
+                // Hide the button after marking as read
+                const button = notificationCard.querySelector('.btn');
+                if (button) {
+                    button.style.display = 'none';
+                }
+            }
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
+{% endblock %}

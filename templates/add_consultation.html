@@ -1,0 +1,429 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Consultation - {{ patient.full_name }}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 900px;">
+  <h1>Add Consultation Record</h1>
+  <p style="color: #666; font-size: 15px; margin-top: 8px; margin-bottom: 24px;">
+    Patient: <strong>{{ patient.full_name }}</strong> | DOB: {{ patient.birth_date.strftime('%B %d, %Y') }} | Purok: {{ patient.purok }}
+  </p>
+
+  <form method="POST" class="form">
+
+    {% if is_bhw %}
+    <!-- BHW Role Notice Banner -->
+    <div style="background: linear-gradient(135deg, #e3f2fd, #fce4ec); border-left: 4px solid #2196f3; border-radius: 10px; padding: 14px 18px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 12px;">
+      <i class="fas fa-info-circle" style="color: #2196f3; font-size: 20px; margin-top: 2px; flex-shrink: 0;"></i>
+      <div>
+        <p style="margin: 0; font-weight: 700; color: #1a237e; font-size: 14px;">BHW Monitoring Record</p>
+        <p style="margin: 4px 0 0; font-size: 13px; color: #444;">
+          You are recording a <strong>health monitoring visit</strong>. Please fill in the patient's vital signs, chief complaint, and any observations.
+          Diagnosis and medicine dispensing will be completed by the <strong>Midwife or Admin</strong>.
+        </p>
+      </div>
+    </div>
+    {% endif %}
+    <!-- Consultation Type -->
+    <div class="form-group">
+      <label for="consultation_type" class="form-label">Consultation Type</label>
+      {% if is_bhw %}
+        <input type="text" class="form-control" value="Monitoring" readonly
+               style="background: #f0f4f8; color: #555; cursor: not-allowed;">
+        <input type="hidden" name="consultation_type" value="Monitoring">
+        <small class="form-text" style="color: #e67e22;">
+          <i class="fas fa-lock"></i> BHW role is limited to Monitoring consultations only.
+        </small>
+      {% else %}
+        <select id="consultation_type" name="consultation_type" class="form-control" required>
+          <option value="General">General Checkup</option>
+          <option value="Prenatal">Prenatal Checkup</option>
+          <option value="Immunization">Immunization</option>
+          <option value="Child Health">Child Health</option>
+          <option value="Family Planning">Family Planning</option>
+          <option value="Emergency">Emergency</option>
+          <option value="Follow-up">Follow-up</option>
+        </select>
+      {% endif %}
+    </div>
+
+    <!-- Chief Complaint -->
+    <div class="form-group">
+      <label for="chief_complaint" class="form-label">Chief Complaint</label>
+      <textarea id="chief_complaint" name="chief_complaint" class="form-control" rows="3" placeholder="e.g., Fever, Cough, Body pain" required></textarea>
+      <small class="form-text">What is the patient's main health concern?</small>
+    </div>
+
+    <!-- Vital Signs Section -->
+    <div style="background: linear-gradient(135deg, rgba(0, 180, 216, 0.05) 0%, rgba(114, 9, 183, 0.05) 100%); padding: 20px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid var(--primary);">
+      <h4 style="font-size: 16px; font-weight: 600; margin-top: 0; margin-bottom: 16px; color: var(--primary);">Vital Signs</h4>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+        <!-- Temperature -->
+        <div class="form-group">
+          <label for="temperature" class="form-label">Temperature (°C)</label>
+          <input type="number" id="temperature" name="temperature" class="form-control" step="0.1" min="35" max="42" placeholder="36.5">
+        </div>
+
+        <!-- Systolic BP -->
+        <div class="form-group">
+          <label for="blood_pressure_systolic" class="form-label">Blood Pressure Systolic (mmHg)</label>
+          <input type="number" id="blood_pressure_systolic" name="blood_pressure_systolic" class="form-control" min="50" max="200" placeholder="120">
+        </div>
+
+        <!-- Diastolic BP -->
+        <div class="form-group">
+          <label for="blood_pressure_diastolic" class="form-label">Blood Pressure Diastolic (mmHg)</label>
+          <input type="number" id="blood_pressure_diastolic" name="blood_pressure_diastolic" class="form-control" min="30" max="130" placeholder="80">
+        </div>
+
+        <!-- Weight -->
+        <div class="form-group">
+          <label for="weight" class="form-label">Weight (kg)</label>
+          <input type="number" id="weight" name="weight" class="form-control" step="0.1" min="2" max="300" placeholder="60">
+        </div>
+
+        <!-- Height -->
+        <div class="form-group">
+          <label for="height" class="form-label">Height (cm)</label>
+          <input type="number" id="height" name="height" class="form-control" step="0.1" min="50" max="250" placeholder="170">
+        </div>
+
+        <!-- Respiratory Rate -->
+        <div class="form-group">
+          <label for="respiratory_rate" class="form-label">Respiratory Rate (breaths/min)</label>
+          <input type="number" id="respiratory_rate" name="respiratory_rate" class="form-control" min="8" max="40" placeholder="16">
+        </div>
+      </div>
+    </div>
+
+    <!-- Diagnosis -->
+    <div class="form-group">
+      <label for="diagnosis" class="form-label">Diagnosis</label>
+      {% if is_bhw %}
+        <div style="background: #fff8e1; border: 2px dashed #ffc107; border-radius: 8px; padding: 14px; display: flex; align-items: flex-start; gap: 10px;">
+          <i class="fas fa-lock" style="color: #e67e22; margin-top: 2px; flex-shrink: 0;"></i>
+          <div>
+            <p style="margin: 0; font-weight: 600; color: #7d5a00; font-size: 14px;">Diagnosis — Midwife/Admin Only</p>
+            <p style="margin: 4px 0 8px; font-size: 13px; color: #7d5a00;">
+              As a BHW, you can enter preliminary observations below. The official diagnosis will be completed by the Midwife or Admin upon review.
+            </p>
+            <textarea name="diagnosis" class="form-control" rows="2"
+                      placeholder="Optional: Enter preliminary observations (e.g., patient reports fever for 3 days...)"
+                      style="background: white; border-color: #ffc107;"></textarea>
+          </div>
+        </div>
+      {% else %}
+        <textarea id="diagnosis" name="diagnosis" class="form-control" rows="3"
+                  placeholder="e.g., Acute Respiratory Infection" required></textarea>
+        <small class="form-text">What is your clinical diagnosis?</small>
+      {% endif %}
+    </div>
+
+    <!-- Notes -->
+    <div class="form-group">
+      <label for="notes" class="form-label">Additional Notes</label>
+      <textarea id="notes" name="notes" class="form-control" rows="2" placeholder="Any additional observations or recommendations"></textarea>
+    </div>
+
+    <!-- Medicine Dispensing Section -->
+    {% if is_bhw %}
+      <div style="background: #f8f9fa; border: 2px dashed #ccc; border-radius: 12px; padding: 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 14px;">
+        <i class="fas fa-pills" style="font-size: 28px; color: #ccc; flex-shrink: 0;"></i>
+        <div>
+          <p style="margin: 0; font-weight: 600; color: #888; font-size: 15px;">Medicine Dispensing — Midwife/Admin Only</p>
+          <p style="margin: 4px 0 0; font-size: 13px; color: #aaa;">
+            Medicine prescription and dispensing is restricted to licensed health workers. A Midwife or Admin will complete this after reviewing the consultation.
+          </p>
+        </div>
+      </div>
+    {% elif medicines %}
+      <div style="background: linear-gradient(135deg, rgba(6, 214, 160, 0.05) 0%, rgba(6, 214, 160, 0.02) 100%); padding: 20px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid var(--success);">
+        <h4 style="font-size: 16px; font-weight: 600; margin-top: 0; margin-bottom: 16px; color: var(--success);">Medicines to Dispense</h4>
+        
+        <div id="medicines-container">
+          <div class="medicine-item" style="background: white; padding: 16px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--gray-200);">
+            <!-- Medicine Selection Row -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 12px;">
+              <!-- Medicine Selection -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Medicine <span style="color: #e74c3c;">*</span></label>
+                <select name="medicine_id[]" class="form-control" required>
+                  <option value="">-- Select Medicine --</option>
+                  {% for med in medicines %}
+                    <option value="{{ med.id }}" 
+                            data-available="{{ med.quantity }}"
+                            data-unit="{{ med.unit }}">
+                      {{ med.name }} (Available: {{ med.quantity }} {{ med.unit }})
+                      {% if med.is_expired %} [EXPIRED]{% endif %}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <!-- Quantity -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Quantity <span style="color: #e74c3c;">*</span></label>
+                <input type="number" name="medicine_quantity[]" class="form-control" min="1" placeholder="1" required>
+              </div>
+
+              <!-- Dosage -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Dosage <span style="color: #e74c3c;">*</span></label>
+                <input type="text" name="medicine_dosage[]" class="form-control" placeholder="e.g., 500mg, 1 tablet" required>
+              </div>
+            </div>
+
+            <!-- Route and Frequency Row -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 12px;">
+              <!-- Route/Administration -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Route <span style="color: #e74c3c;">*</span></label>
+                <select name="medicine_route[]" class="form-control" required>
+                  <option value="">-- Select Route --</option>
+                  <option value="Oral">Oral (by mouth)</option>
+                  <option value="Injection">Injection</option>
+                  <option value="Topical">Topical (skin)</option>
+                  <option value="Inhalation">Inhalation</option>
+                  <option value="Rectal">Rectal</option>
+                </select>
+              </div>
+
+              <!-- Frequency -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Frequency <span style="color: #e74c3c;">*</span></label>
+                <select name="medicine_frequency[]" class="form-control" required>
+                  <option value="">-- Select Frequency --</option>
+                  <option value="Once daily">Once daily</option>
+                  <option value="Twice daily">Twice daily</option>
+                  <option value="Three times daily">Three times daily</option>
+                  <option value="Four times daily">Four times daily</option>
+                  <option value="Every 4 hours">Every 4 hours</option>
+                  <option value="Every 6 hours">Every 6 hours</option>
+                  <option value="Every 8 hours">Every 8 hours</option>
+                  <option value="As needed">As needed</option>
+                </select>
+              </div>
+
+              <!-- Duration -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Duration <span style="color: #e74c3c;">*</span></label>
+                <input type="text" name="medicine_duration[]" class="form-control" placeholder="e.g., 7 days, 2 weeks" required>
+              </div>
+            </div>
+
+            <!-- Instructions and Warnings Row -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 12px;">
+              <!-- Special Instructions -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Special Instructions</label>
+                <input type="text" name="medicine_instruction[]" class="form-control" placeholder="e.g., Take with food, avoid milk">
+              </div>
+
+              <!-- Warnings/Side Effects -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Warnings & Side Effects</label>
+                <input type="text" name="medicine_warnings[]" class="form-control" placeholder="e.g., May cause dizziness, avoid alcohol">
+              </div>
+            </div>
+
+            <!-- Remove Button -->
+            <div style="text-align: right; border-top: 1px solid var(--gray-200); padding-top: 12px; margin-top: 12px;">
+              <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeMedicine(this)">
+                <i class="fas fa-trash"></i> Remove Medicine
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Another Medicine Button -->
+        <button type="button" class="btn btn-success btn-sm" onclick="addMedicine()">
+          <i class="fas fa-plus"></i> Add Another Medicine
+        </button>
+      </div>
+    {% else %}
+      <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i> No medicines available in inventory. Please add medicines to the inventory first.
+      </div>
+    {% endif %}
+
+    <!-- Form Actions -->
+    <div style="display: flex; gap: 12px; margin-top: 24px;">
+      <button type="submit" class="btn btn-primary" id="submit-btn">
+        <i class="fas fa-save"></i> {% if is_bhw %}Save Monitoring Record{% else %}Save Consultation{% endif %}
+      </button>
+      <a href="{{ url_for('consultations.consultation_history', patient_id=patient.id) }}" class="btn btn-secondary">
+        <i class="fas fa-times"></i> Cancel
+      </a>
+    </div>
+  </form>
+</div>
+
+<script>
+let medicineCount = 1;
+
+function addMedicine() {
+  medicineCount++;
+  const medicines = {{ medicines | tojson }};
+  
+  const medicineOptions = medicines.map(med => 
+    `<option value="${med.id}" data-available="${med.quantity}" data-unit="${med.unit}">
+      ${med.name} (Available: ${med.quantity} ${med.unit})
+      ${med.is_expired ? ' [EXPIRED]' : ''}
+    </option>`
+  ).join('');
+  
+  const medicineHTML = `
+    <div class="medicine-item" style="background: white; padding: 16px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--gray-200);">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 12px;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Medicine <span style="color: #e74c3c;">*</span></label>
+          <select name="medicine_id[]" class="form-control" required>
+            <option value="">-- Select Medicine --</option>
+            ${medicineOptions}
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Quantity <span style="color: #e74c3c;">*</span></label>
+          <input type="number" name="medicine_quantity[]" class="form-control" min="1" placeholder="1" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Dosage <span style="color: #e74c3c;">*</span></label>
+          <input type="text" name="medicine_dosage[]" class="form-control" placeholder="e.g., 500mg, 1 tablet" required>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 12px;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Route <span style="color: #e74c3c;">*</span></label>
+          <select name="medicine_route[]" class="form-control" required>
+            <option value="">-- Select Route --</option>
+            <option value="Oral">Oral (by mouth)</option>
+            <option value="Injection">Injection</option>
+            <option value="Topical">Topical (skin)</option>
+            <option value="Inhalation">Inhalation</option>
+            <option value="Rectal">Rectal</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Frequency <span style="color: #e74c3c;">*</span></label>
+          <select name="medicine_frequency[]" class="form-control" required>
+            <option value="">-- Select Frequency --</option>
+            <option value="Once daily">Once daily</option>
+            <option value="Twice daily">Twice daily</option>
+            <option value="Three times daily">Three times daily</option>
+            <option value="Four times daily">Four times daily</option>
+            <option value="Every 4 hours">Every 4 hours</option>
+            <option value="Every 6 hours">Every 6 hours</option>
+            <option value="Every 8 hours">Every 8 hours</option>
+            <option value="As needed">As needed</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Duration <span style="color: #e74c3c;">*</span></label>
+          <input type="text" name="medicine_duration[]" class="form-control" placeholder="e.g., 7 days, 2 weeks" required>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 12px;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Special Instructions</label>
+          <input type="text" name="medicine_instruction[]" class="form-control" placeholder="e.g., Take with food, avoid milk">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Warnings & Side Effects</label>
+          <input type="text" name="medicine_warnings[]" class="form-control" placeholder="e.g., May cause dizziness, avoid alcohol">
+        </div>
+      </div>
+
+      <div style="text-align: right; border-top: 1px solid var(--gray-200); padding-top: 12px; margin-top: 12px;">
+        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeMedicine(this)">
+          <i class="fas fa-trash"></i> Remove Medicine
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('medicines-container').insertAdjacentHTML('beforeend', medicineHTML);
+}
+
+function removeMedicine(button) {
+  button.closest('.medicine-item').remove();
+}
+
+// Add real-time quantity validation
+document.addEventListener('change', function(e) {
+  if (e.target.name === 'medicine_id[]') {
+    const selectedOption = e.target.options[e.target.selectedIndex];
+    const available = selectedOption.getAttribute('data-available');
+    const quantityInput = e.target.closest('.medicine-item').querySelector('input[name="medicine_quantity[]"]');
+    
+    if (available) {
+      quantityInput.setAttribute('max', available);
+      quantityInput.placeholder = `Max: ${available}`;
+    }
+  }
+});
+
+// Form submission validation
+document.getElementById('submit-btn').addEventListener('click', function(e) {
+  {% if not is_bhw %}
+  const medicineSelects = document.querySelectorAll('select[name="medicine_id[]"]');
+  let hasAtLeastOneMedicine = false;
+  
+  medicineSelects.forEach(select => {
+    if (select.value) {
+      hasAtLeastOneMedicine = true;
+    }
+  });
+  
+  if (!hasAtLeastOneMedicine) {
+    e.preventDefault();
+    alert('Please select at least one medicine or leave the medicine section empty.');
+  }
+  {% endif %}
+});
+</script>
+
+<style>
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-label {
+    font-weight: 600;
+    font-size: var(--font-size-base);
+    margin-bottom: 8px;
+    display: block;
+    letter-spacing: 0.3px;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--gray-300);
+    border-radius: 8px;
+    font-size: var(--font-size-base);
+    transition: all 150ms ease;
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
+  }
+
+  textarea.form-control {
+    font-family: inherit;
+    resize: vertical;
+  }
+
+  .form-text {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    color: #666;
+    font-weight: 500;
+  }
+</style>
+{% endblock %}

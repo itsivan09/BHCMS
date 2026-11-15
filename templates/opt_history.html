@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}OPT History - {{ patient.full_name }} - BHCMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="page-header mb-5">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-5 mb-2">
+                    <i class="fas fa-weight text-primary me-3"></i>Operation Timbang History
+                </h1>
+                <p class="text-muted lead">{{ patient.full_name }} - Birth Date: {{ patient.birth_date.strftime('%B %d, %Y') }}</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{{ url_for('bhw_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4 border-left-primary">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Patient Name:</strong> {{ patient.full_name }}</p>
+                    <p><strong>Gender:</strong> {{ patient.gender }}</p>
+                    <p><strong>Address:</strong> {{ patient.address or 'N/A' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Purok:</strong> {{ patient.purok }}</p>
+                    <p><strong>Contact:</strong> {{ patient.contact_number or 'N/A' }}</p>
+                    <p><strong>Total Measurements:</strong> <span class="badge bg-primary">{{ opt_records|length }}</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>Measurement Records
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if opt_records %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date Measured</th>
+                                <th>Weight (kg)</th>
+                                <th>Height (cm)</th>
+                                <th>Nutritional Status</th>
+                                <th>BMI</th>
+                                <th>Notes</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in opt_records %}
+                                <tr>
+                                    <td><strong>{{ record.measurement_date.strftime('%B %d, %Y') }}</strong></td>
+                                    <td>{{ record.weight_kg }}</td>
+                                    <td>{{ record.height_cm }}</td>
+                                    <td>
+                                        {# UPDATED LOGIC: Using 'in' operator for partial matching #}
+                                        {% if 'Normal' in record.nutritional_status %}
+                                            <span class="badge bg-success">{{ record.nutritional_status }}</span>
+                                        {% elif 'Underweight' in record.nutritional_status %}
+                                            <span class="badge bg-warning text-dark">{{ record.nutritional_status }}</span>
+                                        {% elif 'Overweight' in record.nutritional_status %}
+                                            <span class="badge bg-danger">{{ record.nutritional_status }}</span>
+                                        {% else %}
+                                            {# Fallback for Obese #}
+                                            <span class="badge bg-danger">{{ record.nutritional_status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ record.bmi|round(2) }}</td>
+                                    <td>
+                                        {% if record.notes %}
+                                            <small>{{ record.notes[:50] }}...</small>
+                                        {% else %}
+                                            <small class="text-muted">No notes</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-warning" title="Edit Record"
+                                            data-record-id="{{ record.id }}"
+                                            data-date="{{ record.measurement_date.strftime('%Y-%m-%d') }}"
+                                            data-weight="{{ record.weight_kg }}"
+                                            data-height="{{ record.height_cm }}"
+                                            data-notes="{{ record.notes or '' }}"
+                                            onclick="openEditModal(this)">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-box">
+                            <h6 class="text-muted">Latest Weight</h6>
+                            <h4>{{ opt_records[0].weight_kg }} kg</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-box">
+                            <h6 class="text-muted">Latest Height</h6>
+                            <h4>{{ opt_records[0].height_cm }} cm</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-box">
+                            <h6 class="text-muted">Latest BMI</h6>
+                            <h4>{{ (opt_records[0].bmi)|round(2) }}</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-box">
+                            <h6 class="text-muted">Status</h6>
+                            <h4>
+                                {# UPDATED LOGIC: Applied same fix to the summary box #}
+                                {% if 'Normal' in opt_records[0].nutritional_status %}
+                                    <span class="badge bg-success">{{ opt_records[0].nutritional_status }}</span>
+                                {% elif 'Underweight' in opt_records[0].nutritional_status %}
+                                    <span class="badge bg-warning text-dark">{{ opt_records[0].nutritional_status }}</span>
+                                {% elif 'Overweight' in opt_records[0].nutritional_status %}
+                                    <span class="badge bg-danger">{{ opt_records[0].nutritional_status }}</span>
+                                {% else %}
+                                    <span class="badge bg-danger">{{ opt_records[0].nutritional_status }}</span>
+                                {% endif %}
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>No records found.</strong> Start by adding an Operation Timbang measurement.
+                </div>
+                <a href="{{ url_for('operation_timbang') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Add New Measurement
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.page-header {
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 2rem;
+}
+
+.border-left-primary {
+    border-left: 4px solid #0d6efd !important;
+}
+
+.stat-box {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #e9ecef;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+}
+</style>
+
+<!-- Edit OPT Record Modal -->
+<div class="modal fade" id="editOptModal" tabindex="-1" aria-labelledby="editOptModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="editOptModalLabel">
+                    <i class="fas fa-edit me-2"></i>Edit Measurement Record
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editOptForm" method="POST" action="">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_measurement_date" class="form-label fw-semibold">Date Measured <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="edit_measurement_date" name="measurement_date" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label for="edit_weight" class="form-label fw-semibold">Weight (kg) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" min="1" max="300" class="form-control" id="edit_weight" name="weight" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label for="edit_height" class="form-label fw-semibold">Height (cm) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.1" min="30" max="250" class="form-control" id="edit_height" name="height" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_notes" class="form-label fw-semibold">Notes</label>
+                        <textarea class="form-control" id="edit_notes" name="notes" rows="3" placeholder="Optional notes..."></textarea>
+                    </div>
+                    <div class="alert alert-info py-2 mb-0">
+                        <small><i class="fas fa-info-circle me-1"></i>BMI and nutritional status will be automatically recalculated after saving.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning text-dark fw-semibold">
+                        <i class="fas fa-save me-2"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openEditModal(btn) {
+    const recordId = btn.dataset.recordId;
+    document.getElementById('edit_measurement_date').value = btn.dataset.date;
+    document.getElementById('edit_weight').value = btn.dataset.weight;
+    document.getElementById('edit_height').value = btn.dataset.height;
+    document.getElementById('edit_notes').value = btn.dataset.notes;
+    document.getElementById('editOptForm').action = '/operation-timbang/edit/' + recordId;
+    new bootstrap.Modal(document.getElementById('editOptModal')).show();
+}
+</script>
+{% endblock %}

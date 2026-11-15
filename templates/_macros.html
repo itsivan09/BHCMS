@@ -1,0 +1,17 @@
+{% macro action_buttons(delete_endpoint=None, delete_param='id', delete_id=None, edit_html=None, view_html=None) -%}
+<div class="btn-group">
+  {%- if view_html %}
+    {{ view_html|safe }}
+  {%- endif %}
+  {%- if edit_html %}
+    {{ edit_html|safe }}
+  {%- endif %}
+  {%- if delete_endpoint and has_permission(current_user, 'delete') %}
+    <form method="POST" action="{{ url_for(delete_endpoint, **{delete_param: delete_id}) }}" class="d-inline" onsubmit="return confirm('Are you sure? This cannot be undone.');">
+      <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+        <i class="fas fa-trash-alt"></i>
+      </button>
+    </form>
+  {%- endif %}
+</div>
+{%- endmacro %}

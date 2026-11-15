@@ -1,0 +1,388 @@
+{% extends 'base.html' %}
+
+{% block title %}Consultation History - {{ patient.full_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- ── Header ── -->
+  <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 28px;">
+    <div>
+      <h1 style="margin: 0 0 6px;">{{ patient.full_name }}</h1>
+      <p style="color: #666; font-size: 14px; margin: 0 0 8px;">
+        <strong>DOB:</strong> {{ patient.birth_date.strftime('%B %d, %Y') }}
+        <span style="color:#ccc; margin: 0 6px;">|</span>
+        <strong>Age:</strong> {{ patient.age }}
+        <span style="color:#ccc; margin: 0 6px;">|</span>
+        <strong>Purok:</strong> {{ patient.purok }}
+        <span style="color:#ccc; margin: 0 6px;">|</span>
+        <strong>Gender:</strong> {{ patient.gender }}
+        {% if patient.contact_number %}
+          <span style="color:#ccc; margin: 0 6px;">|</span>
+          <strong>Contact:</strong> {{ patient.contact_number }}
+        {% endif %}
+      </p>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        {% if patient.is_pregnant %}
+          <span style="background: #d4edda; color: #155724; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 20px; border: 1px solid #c3e6cb;">
+            🤰 Pregnant
+          </span>
+        {% endif %}
+        <span style="background: #e3f2fd; color: #0d47a1; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 20px; border: 1px solid #bbdefb;">
+          📋 {{ consultations | length }} Consultation{{ 's' if consultations | length != 1 else '' }}
+        </span>
+        {% set pending_count = namespace(val=0) %}
+        {% for c in consultations %}{% if '[Pending Midwife Review]' in c.diagnosis %}{% set pending_count.val = pending_count.val + 1 %}{% endif %}{% endfor %}
+        {% if pending_count.val > 0 %}
+          <span style="background: #fff8e1; color: #7d5a00; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 20px; border: 1px solid #ffc107;">
+            ⏳ {{ pending_count.val }} Pending Review
+          </span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <a href="{{ url_for('consultations.add_consultation', patient_id=patient.id) }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add Consultation
+      </a>
+      <a href="{{ url_for('patients.patients') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Patients
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Search / Filter Bar ── -->
+  {% if consultations %}
+  <div style="background: #f8f9fa; border-radius: 10px; padding: 14px 18px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+    <div style="flex: 1; min-width: 200px;">
+      <input type="text" id="searchInput" placeholder="🔍  Search by complaint, diagnosis, notes…"
+             style="width: 100%; padding: 9px 14px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+             onkeyup="filterConsultations()">
+    </div>
+    <select id="typeFilter" style="padding: 9px 14px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 14px;" onchange="filterConsultations()">
+      <option value="">All Types</option>
+      <option value="General">General</option>
+      <option value="Prenatal">Prenatal</option>
+      <option value="Immunization">Immunization</option>
+      <option value="Child Health">Child Health</option>
+      <option value="Family Planning">Family Planning</option>
+      <option value="Emergency">Emergency</option>
+      <option value="Follow-up">Follow-up</option>
+      <option value="Monitoring">Monitoring (BHW)</option>
+    </select>
+    <select id="statusFilter" style="padding: 9px 14px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 14px;" onchange="filterConsultations()">
+      <option value="">All Statuses</option>
+      <option value="pending">⏳ Pending Review</option>
+      <option value="reviewed">✅ Reviewed</option>
+    </select>
+    <small id="resultCount" style="color: #888; font-size: 13px; white-space: nowrap;"></small>
+  </div>
+  {% endif %}
+
+  <!-- ── Consultations List ── -->
+  {% if consultations %}
+    <div id="consultationList" style="display: grid; gap: 20px;">
+      {% for consultation in consultations %}
+        {% set is_pending = '[Pending Midwife Review]' in consultation.diagnosis %}
+        <div class="card consult-card"
+             data-type="{{ consultation.consultation_type }}"
+             data-status="{{ 'pending' if is_pending else 'reviewed' }}"
+             data-search="{{ (consultation.chief_complaint + ' ' + consultation.diagnosis + ' ' + (consultation.notes or '')) | lower }}"
+             style="border-left: 4px solid {{ '#ffc107' if is_pending else 'var(--primary)' }}; transition: box-shadow 0.2s;">
+
+          <!-- Card Header -->
+          <div class="card-header" style="padding: 14px 20px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 5px;">
+                <h5 style="margin: 0; font-size: 16px;">
+                  <i class="fas fa-calendar-alt" style="color: var(--primary); margin-right: 6px;"></i>
+                  {{ consultation.date.strftime('%B %d, %Y') }}
+                  <span style="color: #888; font-weight: 400; font-size: 14px;">at {{ consultation.date.strftime('%I:%M %p') }}</span>
+                </h5>
+                {% if is_pending %}
+                  <span style="background: #ffc107; color: #333; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 20px;">⏳ PENDING REVIEW</span>
+                {% else %}
+                  <span style="background: #d4edda; color: #155724; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 20px;">✅ REVIEWED</span>
+                {% endif %}
+              </div>
+              <p style="margin: 0; font-size: 13px; color: #666;">
+                <span style="background: #e9ecef; padding: 2px 8px; border-radius: 4px; font-weight: 600; margin-right: 8px;">{{ consultation.consultation_type }}</span>
+                <i class="fas fa-user-md" style="margin-right: 4px;"></i>
+                {{ consultation.health_worker.full_name if consultation.health_worker else 'N/A' }}
+              </p>
+            </div>
+
+            {% if current_user.role in ['Midwife', 'Admin'] %}
+            <div style="display: flex; gap: 8px; flex-shrink: 0;">
+              <a href="{{ url_for('consultations.edit_consultation', consultation_id=consultation.id) }}"
+                 style="background: #0dcaf0; color: #fff; padding: 6px 14px; font-size: 13px; font-weight: 600; text-decoration: none; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; border: none; cursor: pointer;">
+                <i class="fas fa-edit"></i> {{ 'Review' if is_pending else 'Edit' }}
+              </a>
+              <button type="button"
+                      onclick="confirmDelete({{ consultation.id }}, '{{ consultation.date.strftime('%B %d, %Y') }}')"
+                      style="background: #e74c3c; color: #fff; padding: 6px 14px; font-size: 13px; font-weight: 600; border-radius: 6px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                <i class="fas fa-trash"></i> Delete
+              </button>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Card Body -->
+          <div style="padding: 18px 20px;">
+
+            <!-- Vital Signs -->
+            {% if consultation.temperature or consultation.blood_pressure_systolic or consultation.weight or consultation.height or consultation.respiratory_rate %}
+              <div style="margin-bottom: 20px;">
+                <p style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--primary); margin: 0 0 10px;">
+                  <i class="fas fa-heartbeat" style="margin-right: 5px;"></i>Vital Signs
+                </p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;">
+
+                  {% if consultation.temperature %}
+                    <div style="background: #f0f4ff; padding: 12px 14px; border-radius: 8px; border-top: 3px solid #4361ee;">
+                      <p style="font-size: 11px; color: #666; margin: 0 0 4px; text-transform: uppercase; font-weight: 600;">🌡 Temperature</p>
+                      <p style="font-size: 19px; font-weight: 700; color: #333; margin: 0;">
+                        {{ consultation.temperature }}°C
+                        {% if consultation.temperature >= 38 %}
+                          <span style="font-size: 10px; background: #ffeaa7; color: #d63031; padding: 1px 5px; border-radius: 4px; font-weight: 700; margin-left: 2px;">FEVER</span>
+                        {% endif %}
+                      </p>
+                    </div>
+                  {% endif %}
+
+                  {% if consultation.blood_pressure_systolic %}
+                    <div style="background: #f0fff4; padding: 12px 14px; border-radius: 8px; border-top: 3px solid #00b894;">
+                      <p style="font-size: 11px; color: #666; margin: 0 0 4px; text-transform: uppercase; font-weight: 600;">💓 Blood Pressure</p>
+                      <p style="font-size: 19px; font-weight: 700; color: #333; margin: 0;">
+                        {{ consultation.blood_pressure_systolic }}/{{ consultation.blood_pressure_diastolic }}
+                        <span style="font-size: 11px; color: #888; font-weight: 400;">mmHg</span>
+                      </p>
+                    </div>
+                  {% endif %}
+
+                  {% if consultation.weight %}
+                    <div style="background: #fff8e1; padding: 12px 14px; border-radius: 8px; border-top: 3px solid #fdcb6e;">
+                      <p style="font-size: 11px; color: #666; margin: 0 0 4px; text-transform: uppercase; font-weight: 600;">⚖ Weight</p>
+                      <p style="font-size: 19px; font-weight: 700; color: #333; margin: 0;">{{ consultation.weight }} <span style="font-size: 11px; color: #888; font-weight: 400;">kg</span></p>
+                    </div>
+                  {% endif %}
+
+                  {% if consultation.height %}
+                    <div style="background: #fef9ff; padding: 12px 14px; border-radius: 8px; border-top: 3px solid #a29bfe;">
+                      <p style="font-size: 11px; color: #666; margin: 0 0 4px; text-transform: uppercase; font-weight: 600;">📏 Height</p>
+                      <p style="font-size: 19px; font-weight: 700; color: #333; margin: 0;">{{ consultation.height }} <span style="font-size: 11px; color: #888; font-weight: 400;">cm</span></p>
+                    </div>
+                  {% endif %}
+
+                  {% if consultation.weight and consultation.height and consultation.height > 0 %}
+                    {% set bmi = ((consultation.weight / ((consultation.height / 100) * (consultation.height / 100))) * 10) | round / 10 %}
+                    <div style="background: #fff0f3; padding: 12px 14px; border-radius: 8px; border-top: 3px solid #fd79a8;">
+                      <p style="font-size: 11px; color: #666; margin: 0 0 4px; text-transform: uppercase; font-weight: 600;">📊 BMI</p>
+                      <p style="font-size: 19px; font-weight: 700; color: #333; margin: 0;">
+                        {{ bmi }}
+                        <span style="font-size: 11px; color: #888; font-weight: 400;">
+                          {% if bmi < 18.5 %}Underweight{% elif bmi < 25 %}Normal{% elif bmi < 30 %}Overweight{% else %}Obese{% endif %}
+                        </span>
+                      </p>
+                    </div>
+                  {% endif %}
+
+                  {% if consultation.respiratory_rate %}
+                    <div style="background: #f0fffe; padding: 12px 14px; border-radius: 8px; border-top: 3px solid #00cec9;">
+                      <p style="font-size: 11px; color: #666; margin: 0 0 4px; text-transform: uppercase; font-weight: 600;">🫁 Resp. Rate</p>
+                      <p style="font-size: 19px; font-weight: 700; color: #333; margin: 0;">{{ consultation.respiratory_rate }} <span style="font-size: 11px; color: #888; font-weight: 400;">br/min</span></p>
+                    </div>
+                  {% endif %}
+
+                </div>
+              </div>
+            {% endif %}
+
+            <!-- Chief Complaint -->
+            <div style="margin-bottom: 14px;">
+              <p style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #555; margin: 0 0 8px;">
+                <i class="fas fa-comment-medical" style="margin-right: 5px; color: #e67e22;"></i>Chief Complaint
+              </p>
+              <div style="background: #fffdf5; padding: 12px 14px; border-radius: 8px; border-left: 4px solid #e67e22; font-size: 14px; color: #333;">
+                {{ consultation.chief_complaint }}
+              </div>
+            </div>
+
+            <!-- Diagnosis -->
+            <div style="margin-bottom: 14px;">
+              <p style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #555; margin: 0 0 8px;">
+                <i class="fas fa-stethoscope" style="margin-right: 5px; color: #e74c3c;"></i>Diagnosis
+              </p>
+              {% if is_pending %}
+                <div style="background: #fff8e1; padding: 12px 14px; border-radius: 8px; border-left: 4px solid #ffc107; font-size: 14px;">
+                  <span style="display: inline-block; background: #ffc107; color: #333; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px; margin-bottom: 6px;">⏳ PENDING MIDWIFE REVIEW</span>
+                  {% set clean_diag = consultation.diagnosis | replace('[Pending Midwife Review] ', '') | replace('[Pending Midwife Review]', '') | trim %}
+                  {% if clean_diag %}
+                    <p style="margin: 6px 0 0; color: #555; font-style: italic;"><strong>BHW Observation:</strong> {{ clean_diag }}</p>
+                  {% else %}
+                    <p style="margin: 6px 0 0; color: #aaa; font-style: italic;">No preliminary observation entered.</p>
+                  {% endif %}
+                  {% if current_user.role in ['Midwife', 'Admin'] %}
+                    <a href="{{ url_for('consultations.edit_consultation', consultation_id=consultation.id) }}"
+                       style="display: inline-block; margin-top: 10px; background: #ffc107; color: #333; font-size: 12px; font-weight: 700; padding: 5px 14px; border-radius: 6px; text-decoration: none;">
+                      <i class="fas fa-pen"></i> Complete Diagnosis
+                    </a>
+                  {% endif %}
+                </div>
+              {% else %}
+                <div style="background: #fdf0f0; padding: 12px 14px; border-radius: 8px; border-left: 4px solid #e74c3c; font-size: 14px; color: #333;">
+                  {{ consultation.diagnosis }}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Notes -->
+            {% if consultation.notes %}
+              <div style="margin-bottom: 14px;">
+                <p style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #555; margin: 0 0 8px;">
+                  <i class="fas fa-sticky-note" style="margin-right: 5px; color: #6c757d;"></i>Notes
+                </p>
+                <div style="background: #f8f9fa; padding: 12px 14px; border-radius: 8px; border-left: 4px solid #adb5bd; font-size: 14px; color: #444;">
+                  {{ consultation.notes }}
+                </div>
+              </div>
+            {% endif %}
+
+            <!-- Dispensed Medicines -->
+            {% if consultation.dispensed_medicines %}
+              <div style="margin-top: 18px; padding-top: 18px; border-top: 2px dashed #e9ecef;">
+                <p style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #00b894; margin: 0 0 12px;">
+                  <i class="fas fa-pills" style="margin-right: 5px;"></i>Medicines Dispensed
+                  <span style="background: #d4edda; color: #155724; font-size: 11px; padding: 1px 7px; border-radius: 10px; font-weight: 600; margin-left: 4px;">
+                    {{ consultation.dispensed_medicines | length }}
+                  </span>
+                </p>
+                <div style="display: grid; gap: 10px;">
+                  {% for dm in consultation.dispensed_medicines %}
+                    <div style="background: #f0fff8; border: 1px solid #b2dfdb; border-radius: 8px; padding: 12px 16px;">
+                      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+                        <div>
+                          <p style="font-weight: 700; font-size: 14px; margin: 0 0 4px; color: #1a6b5a;">
+                            <i class="fas fa-capsules" style="margin-right: 5px;"></i>{{ dm.inventory_item.name }}
+                          </p>
+                          <p style="font-size: 13px; color: #555; margin: 0;">
+                            <strong>Qty:</strong> {{ dm.quantity_dispensed }} {{ dm.inventory_item.unit }}
+                            {% if dm.dosage %}&nbsp;·&nbsp;<strong>Dose:</strong> {{ dm.dosage }}{% endif %}
+                          </p>
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                          {% if dm.route %}
+                            <span style="background: #e3f2fd; color: #1565c0; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600;">{{ dm.route }}</span>
+                          {% endif %}
+                          {% if dm.frequency %}
+                            <span style="background: #f3e5f5; color: #6a1b9a; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600;">{{ dm.frequency }}</span>
+                          {% endif %}
+                          {% if dm.duration %}
+                            <span style="background: #fff3e0; color: #e65100; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600;">{{ dm.duration }}</span>
+                          {% endif %}
+                        </div>
+                      </div>
+                      {% if dm.instructions or dm.warnings %}
+                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #b2dfdb; display: flex; gap: 16px; flex-wrap: wrap;">
+                          {% if dm.instructions %}
+                            <p style="font-size: 12px; color: #555; margin: 0;">
+                              <i class="fas fa-info-circle" style="color: #0dcaf0; margin-right: 3px;"></i>
+                              <strong>Instructions:</strong> {{ dm.instructions }}
+                            </p>
+                          {% endif %}
+                          {% if dm.warnings %}
+                            <p style="font-size: 12px; color: #c0392b; margin: 0;">
+                              <i class="fas fa-exclamation-triangle" style="margin-right: 3px;"></i>
+                              <strong>Warning:</strong> {{ dm.warnings }}
+                            </p>
+                          {% endif %}
+                        </div>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+
+          </div><!-- end card body -->
+        </div><!-- end card -->
+      {% endfor %}
+    </div>
+
+    <div id="noResults" style="display: none; text-align: center; padding: 30px; background: #f8f9fa; border-radius: 12px; margin-top: 10px;">
+      <i class="fas fa-search" style="font-size: 36px; color: #ccc; display: block; margin-bottom: 10px;"></i>
+      <p style="color: #999; margin: 0;">No consultations match your search or filter.</p>
+    </div>
+
+  {% else %}
+    <div style="text-align: center; padding: 50px 20px; background: #f8f9fa; border-radius: 12px;">
+      <i class="fas fa-clipboard-list" style="font-size: 52px; color: #ccc; margin-bottom: 16px; display: block;"></i>
+      <h4 style="color: #888; margin-bottom: 8px;">No Consultations Yet</h4>
+      <p style="color: #999; font-size: 14px; margin-bottom: 20px;">No records have been added for this patient.</p>
+      <a href="{{ url_for('consultations.add_consultation', patient_id=patient.id) }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add First Consultation
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center;">
+  <div style="background:white; border-radius:14px; padding:28px 32px; max-width:420px; width:90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+    <div style="text-align:center; margin-bottom:20px;">
+      <i class="fas fa-exclamation-triangle" style="font-size:42px; color:#e74c3c; display:block; margin-bottom:10px;"></i>
+      <h4 style="margin:0 0 8px; color:#333;">Delete Consultation?</h4>
+      <p id="deleteModalText" style="color:#666; font-size:14px; margin:0;"></p>
+    </div>
+    <div style="font-size:13px; color:#c0392b; background:#fff5f5; padding:10px 14px; border-radius:8px; margin-bottom:20px; border-left:3px solid #e74c3c;">
+      ⚠ This will permanently delete this record. Dispensed medicine quantities will be restored to inventory.
+    </div>
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button type="button" onclick="closeDeleteModal()" class="btn btn-secondary">Cancel</button>
+      <form id="deleteForm" method="POST" style="margin:0;">
+        <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Yes, Delete</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function filterConsultations() {
+  const q      = document.getElementById('searchInput').value.toLowerCase();
+  const type   = document.getElementById('typeFilter').value;
+  const status = document.getElementById('statusFilter').value;
+  const cards  = document.querySelectorAll('.consult-card');
+  let visible  = 0;
+  cards.forEach(card => {
+    const ok = (!q || card.dataset.search.includes(q))
+            && (!type   || card.dataset.type === type)
+            && (!status || card.dataset.status === status);
+    card.style.display = ok ? '' : 'none';
+    if (ok) visible++;
+  });
+  document.getElementById('noResults').style.display = visible === 0 ? 'block' : 'none';
+  const total = cards.length;
+  document.getElementById('resultCount').textContent =
+    visible < total ? `Showing ${visible} of ${total}` : `${total} record${total !== 1 ? 's' : ''}`;
+}
+window.addEventListener('DOMContentLoaded', filterConsultations);
+
+function confirmDelete(consultationId, dateStr) {
+  document.getElementById('deleteModalText').textContent =
+    `Delete the consultation record from ${dateStr}?`;
+  document.getElementById('deleteForm').action = `/consultation/${consultationId}/delete`;
+  document.getElementById('deleteModal').style.display = 'flex';
+}
+function closeDeleteModal() {
+  document.getElementById('deleteModal').style.display = 'none';
+}
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+  if (e.target === this) closeDeleteModal();
+});
+</script>
+
+<style>
+  .consult-card { transition: box-shadow 0.2s; }
+  .consult-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+</style>
+{% endblock %}

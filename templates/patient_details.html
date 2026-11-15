@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0077b6">
+    <title>Patient Record - {{ patient.full_name }}</title>
+    <script>
+    (function () {
+        var key = 'bhcms_theme';
+        var theme = null;
+        var legacy = null;
+        try {
+            theme = localStorage.getItem(key);
+            legacy = localStorage.getItem('theme');
+        } catch (e) {}
+
+        if (!theme && (legacy === 'dark' || legacy === 'light')) {
+            theme = legacy;
+            try {
+                localStorage.setItem(key, legacy);
+                localStorage.removeItem('theme');
+            } catch (e) {}
+        }
+
+        if (!theme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            theme = 'dark';
+        }
+
+        var applied = theme === 'dark' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', applied);
+        document.documentElement.setAttribute('data-bs-theme', applied);
+    })();
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #1f2937;
+            background: white;
+        }
+        
+        .page {
+            width: 100%;
+            page-break-after: always;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #0e7c86;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            font-size: 20px;
+            color: #0e7c86;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 11px;
+            color: #6b7280;
+            margin: 2px 0;
+        }
+        
+        .header-line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #4b5563;
+            margin-top: 5px;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f9fafb;
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0e7c86;
+            border-bottom: 2px solid #0e7c86;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 18px;
+            background: #0e7c86;
+            border-radius: 2px;
+            margin-right: 10px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .info-grid-3col {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        
+        .info-value {
+            font-size: 12px;
+            color: #1f2937;
+            font-weight: 500;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .badge-info {
+            background: #dbeafe;
+            color: #0c4a6e;
+        }
+        
+        .badge-danger {
+            background: #fee2e2;
+            color: #7f1d1d;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        table thead {
+            background: #0e7c86;
+            color: white;
+        }
+        
+        table th {
+            padding: 10px;
+            text-align: left;
+            font-size: 10px;
+            font-weight: 700;
+            border: 1px solid #d1d5db;
+        }
+        
+        table td {
+            padding: 8px 10px;
+            border: 1px solid #d1d5db;
+            font-size: 11px;
+        }
+        
+        table tbody tr:nth-child(odd) {
+            background: white;
+        }
+        
+        table tbody tr:nth-child(even) {
+            background: #f3f4f6;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 2px solid #d1d5db;
+            font-size: 9px;
+            color: #6b7280;
+            text-align: center;
+        }
+        
+        .vital-signs {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .vital-item {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid #0e7c86;
+            text-align: center;
+        }
+        
+        .vital-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0e7c86;
+            margin: 5px 0;
+        }
+        
+        .vital-unit {
+            font-size: 9px;
+            color: #6b7280;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 20px;
+            color: #9ca3af;
+            font-style: italic;
+        }
+        
+        .highlight {
+            background: #fef3c7;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        [data-theme="dark"] body {
+            color: #dde8f0;
+            background: #0e1a24;
+        }
+
+        [data-theme="dark"] .section {
+            background: #192839;
+            border-color: rgba(255,255,255,.12);
+        }
+
+        [data-theme="dark"] .header p,
+        [data-theme="dark"] .header-line,
+        [data-theme="dark"] .info-label,
+        [data-theme="dark"] .vital-unit,
+        [data-theme="dark"] .footer,
+        [data-theme="dark"] .empty-state {
+            color: #9cb3c3;
+        }
+
+        [data-theme="dark"] .info-value,
+        [data-theme="dark"] table td,
+        [data-theme="dark"] .vital-value {
+            color: #dde8f0;
+        }
+
+        [data-theme="dark"] table th,
+        [data-theme="dark"] table td {
+            border-color: rgba(255,255,255,.1);
+        }
+
+        [data-theme="dark"] table tbody tr:nth-child(odd) {
+            background: #192839;
+        }
+
+        [data-theme="dark"] table tbody tr:nth-child(even) {
+            background: #1f3347;
+        }
+
+        [data-theme="dark"] .vital-item {
+            background: #1f3347;
+            border-left-color: #2ecad6;
+        }
+
+        [data-theme="dark"] .highlight {
+            background: rgba(251,191,36,.18);
+            color: #fde68a;
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                background: white !important;
+                color: #1f2937 !important;
+            }
+
+            .section,
+            .vital-item,
+            table tbody tr:nth-child(odd),
+            table tbody tr:nth-child(even) {
+                background: white !important;
+                color: #1f2937 !important;
+            }
+            
+            .page {
+                margin: 0;
+                padding: 20px;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="page">
+        <div class="header">
+            <h1><i class="fas fa-hospital"></i> BARANGAY HEALTH CENTER</h1>
+            <p>Patient Medical Record</p>
+            <div class="header-line">
+                <span>Report ID: REC-{{ patient.id }}-{{ generated_date.strftime('%Y%m%d%H%M%S') }}</span>
+                <span>Generated: {{ generated_date.strftime('%B %d, %Y at %H:%M') }}</span>
+            </div>
+        </div>
+        
+        <!-- Patient Demographics Section -->
+        <div class="section">
+            <div class="section-title">Patient Information</div>
+            
+            <div class="info-grid info-grid-3col">
+                <div class="info-item">
+                    <span class="info-label">Full Name</span>
+                    <span class="info-value">{{ patient.full_name }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Patient ID</span>
+                    <span class="info-value">#{{ patient.id }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Age</span>
+                    <span class="info-value">{{ patient.age }} years old</span>
+                </div>
+            </div>
+            
+            <div class="info-grid info-grid-3col">
+                <div class="info-item">
+                    <span class="info-label">Birth Date</span>
+                    <span class="info-value">{{ patient.birth_date.strftime('%B %d, %Y') }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Gender</span>
+                    <span class="info-value">
+                        {% if patient.gender == 'Male' %}
+                            Male
+                        {% elif patient.gender == 'Female' %}
+                            Female
+                        {% else %}
+                            {{ patient.gender }}
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Purok/Zone</span>
+                    <span class="info-value">{{ patient.purok }}</span>
+                </div>
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Address</span>
+                    <span class="info-value">{{ patient.address if patient.address else 'Not specified' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Contact Number</span>
+                    <span class="info-value">{{ patient.contact_number if patient.contact_number else 'Not specified' }}</span>
+                </div>
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Pregnancy Status</span>
+                    {% if patient.is_pregnant %}
+                        <span class="badge badge-success">Currently Pregnant</span>
+                        {% if patient.expected_delivery_date %}
+                            <span class="info-value" style="margin-top: 5px;">EDD: {{ patient.expected_delivery_date.strftime('%B %d, %Y') }}</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge badge-info">Not Pregnant</span>
+                    {% endif %}
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Record Created</span>
+                    <span class="info-value">{{ patient.created_at.strftime('%B %d, %Y') }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Prenatal Record (if applicable) -->
+        {% if prenatal_record %}
+        <div class="section">
+            <div class="section-title">Prenatal Record</div>
+            
+            <div class="info-grid info-grid-3col">
+                <div class="info-item">
+                    <span class="info-label">Weeks of Pregnancy</span>
+                    <span class="info-value">{{ prenatal_record.weeks_of_pregnancy }} weeks</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Estimated Delivery Date</span>
+                    <span class="info-value">{{ prenatal_record.estimated_delivery_date.strftime('%B %d, %Y') }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Days Until Delivery</span>
+                    <span class="info-value">{{ prenatal_record.days_until_delivery() }} days</span>
+                </div>
+            </div>
+            
+            <div class="info-grid info-grid-3col">
+                <div class="info-item">
+                    <span class="info-label">Gravidity</span>
+                    <span class="info-value">{{ prenatal_record.gravidity if prenatal_record.gravidity else 'N/A' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Parity</span>
+                    <span class="info-value">{{ prenatal_record.parity if prenatal_record.parity else 'N/A' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Blood Type</span>
+                    <span class="info-value">{{ prenatal_record.blood_type if prenatal_record.blood_type else 'Not recorded' }}</span>
+                </div>
+            </div>
+            
+            {% if prenatal_record.previous_complications %}
+            <div class="info-item" style="margin-top: 10px;">
+                <span class="info-label">Previous Complications</span>
+                <span class="info-value">{{ prenatal_record.previous_complications }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="vital-signs" style="margin-top: 15px;">
+                <div class="vital-item">
+                    <span class="info-label" style="font-size: 9px;">Last BP</span>
+                    <span class="vital-value">{{ prenatal_record.last_blood_pressure if prenatal_record.last_blood_pressure else '--' }}</span>
+                </div>
+                <div class="vital-item">
+                    <span class="info-label" style="font-size: 9px;">Weight (kg)</span>
+                    <span class="vital-value">{{ prenatal_record.weight_kg if prenatal_record.weight_kg else '--' }}</span>
+                </div>
+                <div class="vital-item">
+                    <span class="info-label" style="font-size: 9px;">Height (cm)</span>
+                    <span class="vital-value">{{ prenatal_record.height_cm if prenatal_record.height_cm else '--' }}</span>
+                </div>
+                <div class="vital-item">
+                    <span class="info-label" style="font-size: 9px;">Last Checkup</span>
+                    <span class="vital-value">{{ prenatal_record.last_checkup_date.strftime('%m/%d') if prenatal_record.last_checkup_date else '--' }}</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Operation Timbang Records (Child Nutrition) -->
+        {% if operation_timbang %}
+        <div class="section">
+            <div class="section-title">Nutrition Monitoring Records</div>
+            
+            {% if operation_timbang|length > 0 %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Weight (kg)</th>
+                            <th>Height (cm)</th>
+                            <th>BMI</th>
+                            <th>Nutritional Status</th>
+                            <th>Follow-up</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in operation_timbang[:10] %}  <!-- Show last 10 records -->
+                        <tr>
+                            <td>{{ record.measurement_date.strftime('%m/%d/%Y') }}</td>
+                            <td>{{ '%.1f'|format(record.weight_kg) }}</td>
+                            <td>{{ '%.1f'|format(record.height_cm) }}</td>
+                            <td>{{ '%.1f'|format(record.bmi) if record.bmi else 'N/A' }}</td>
+                            <td>
+                                <span class="badge {% if 'Normal' in record.nutritional_status %}badge-success{% elif 'At Risk' in record.nutritional_status %}badge-warning{% else %}badge-danger{% endif %}">
+                                    {{ record.nutritional_status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if record.requires_followup %}
+                                    <span class="badge badge-warning">Yes</span>
+                                {% else %}
+                                    <span class="badge badge-success">No</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-state">No nutrition monitoring records found</div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- Consultation History -->
+        <div class="section">
+            <div class="section-title">Consultation History</div>
+            
+            {% if consultations|length > 0 %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Chief Complaint</th>
+                            <th>Diagnosis</th>
+                            <th>Temperature</th>
+                            <th>BP (Sys/Dia)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for consultation in consultations[:15] %}  <!-- Show last 15 consultations -->
+                        <tr>
+                            <td>{{ consultation.date.strftime('%m/%d/%Y') }}</td>
+                            <td>
+                                <span class="badge badge-info">{{ consultation.consultation_type }}</span>
+                            </td>
+                            <td>{{ consultation.chief_complaint[:30] }}{% if consultation.chief_complaint|length > 30 %}...{% endif %}</td>
+                            <td>{{ consultation.diagnosis[:30] }}{% if consultation.diagnosis|length > 30 %}...{% endif %}</td>
+                            <td>{{ consultation.temperature if consultation.temperature else '--' }}°C</td>
+                            <td>{{ consultation.blood_pressure_systolic }}/{{ consultation.blood_pressure_diastolic if consultation.blood_pressure_diastolic else '--' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-state">No consultation records found</div>
+            {% endif %}
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>This is an official medical record from the Barangay Health Center.</p>
+            <p>For inquiries or corrections, please contact the Health Center office.</p>
+            <p style="margin-top: 10px; font-size: 8px;">
+                Document ID: {{ patient.id }}-{{ generated_date.strftime('%Y%m%d%H%M%S') }} | 
+                Page Generated: {{ generated_date.strftime('%Y-%m-%d %H:%M:%S') }}
+            </p>
+        </div>
+    </div>
+</body>
+</html>

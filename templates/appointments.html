@@ -1,0 +1,732 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h2><i class="fas fa-calendar-alt me-2"></i>Appointments</h2>
+        <p class="dashboard-subtitle">Manage patient appointments and prevent scheduling conflicts</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="card-body">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-2 mb-3">
+                <h5 class="card-title mb-0"><i class="fas fa-calendar me-2"></i>Scheduled Appointments</h5>
+                <div class="d-flex flex-wrap gap-2 align-items-center w-100 w-lg-auto">
+                    {% if current_user.role in ['Admin', 'Midwife'] %}
+                    <form method="POST" action="{{ url_for('appointments.test_email') }}" class="d-flex gap-2 align-items-center" style="margin:0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="email" name="test_email_address" class="form-control form-control-sm" placeholder="Test email address" required style="width:220px; max-width:52vw;">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary shadow-sm" title="Send a test Gmail reminder">
+                            <i class="fas fa-paper-plane me-1"></i>Test Email
+                        </button>
+                    </form>
+                    {% endif %}
+                    <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#bookAppointmentModal">
+                        <i class="fas fa-plus me-1"></i>Book Appointment
+                    </button>
+                </div>
+            </div>
+
+            <ul class="nav nav-tabs mb-3" role="tablist" aria-label="Appointment status tabs">
+                <li class="nav-item">
+                    <a class="nav-link active" id="upcoming-tab" data-bs-toggle="tab" href="#upcoming" role="tab" aria-controls="upcoming" aria-selected="true">Upcoming</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="completed-tab" data-bs-toggle="tab" href="#completed" role="tab" aria-controls="completed" aria-selected="false">Completed</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="cancelled-tab" data-bs-toggle="tab" href="#cancelled" role="tab" aria-controls="cancelled" aria-selected="false">Cancelled</a>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="upcoming" role="tabpanel" aria-labelledby="upcoming-tab">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-header-dark">
+                                <tr>
+                                    <th scope="col">Patient</th>
+                                    <th scope="col">Healthcare Worker</th>
+                                    <th scope="col">Date & Time</th>
+                                    <th scope="col">Contact</th>
+                                    <th scope="col">Reason</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appt in appointments %}
+                                    {% if appt.status == 'scheduled' %}
+                                    <tr>
+                                        <td><strong>{{ appt.patient.full_name }}</strong></td>
+                                        <td>{{ appt.health_worker.full_name }}</td>
+                                        <td>
+                                            <div class="small text-muted">{{ appt.appointment_date.strftime('%b %d, %Y') }}</div>
+                                            <div>{{ appt.appointment_time.strftime('%I:%M %p') }}</div>
+                                        </td>
+                                        <td>
+                                            {% if appt.patient.contact_number %}
+                                            <a href="tel:{{ appt.patient.contact_number }}" class="text-decoration-none">
+                                                <i class="fas fa-phone-alt me-1 text-success"></i>{{ appt.patient.contact_number }}
+                                            </a>
+                                            {% else %}
+                                            <span class="text-muted small"><i class="fas fa-phone-slash me-1"></i>No number</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ appt.reason if appt.reason else '-' }}</td>
+                                        <td><span class="badge bg-success shadow-sm"><i class="fas fa-clock me-1"></i>Scheduled</span></td>
+                                        <td>
+                                            {% if current_user.role in ['Admin', 'Midwife'] or current_user.id == appt.health_worker_id %}
+                                            <div class="btn-group">
+                                                <form method="POST" action="{{ url_for('appointments.complete_appointment', appointment_id=appt.id) }}" style="display:inline;">
+                                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Mark Complete" aria-label="Mark appointment complete">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                </form>
+                                                <form method="POST" action="{{ url_for('appointments.cancel_appointment', appointment_id=appt.id) }}" style="display:inline;">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Cancel this appointment?')" aria-label="Cancel appointment">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                            {% else %}
+                                            <span class="text-muted small"><i class="fas fa-lock me-1"></i>Restricted</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% if appointments|selectattr('status', 'equalto', 'scheduled')|list|length == 0 %}
+                        <div class="alert alert-info border-0 shadow-sm">
+                            <i class="fas fa-info-circle me-2"></i>No scheduled appointments
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="completed" role="tabpanel" aria-labelledby="completed-tab">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-header-dark">
+                                <tr>
+                                    <th scope="col">Patient</th>
+                                    <th scope="col">Healthcare Worker</th>
+                                    <th scope="col">Date</th>
+                                    <th scope="col">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appt in appointments %}
+                                    {% if appt.status == 'completed' %}
+                                    <tr>
+                                        <td><strong>{{ appt.patient.full_name }}</strong></td>
+                                        <td>{{ appt.health_worker.full_name }}</td>
+                                        <td>{{ appt.appointment_date.strftime('%b %d, %Y') }} at {{ appt.appointment_time.strftime('%I:%M %p') }}</td>
+                                        <td><span class="badge bg-info text-dark shadow-sm"><i class="fas fa-check-circle me-1"></i>Completed</span></td>
+                                    </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="cancelled" role="tabpanel" aria-labelledby="cancelled-tab">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-header-dark">
+                                <tr>
+                                    <th scope="col">Patient</th>
+                                    <th scope="col">Healthcare Worker</th>
+                                    <th scope="col">Date</th>
+                                    <th scope="col">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appt in appointments %}
+                                    {% if appt.status == 'cancelled' %}
+                                    <tr>
+                                        <td><strong>{{ appt.patient.full_name }}</strong></td>
+                                        <td>{{ appt.health_worker.full_name }}</td>
+                                        <td>{{ appt.appointment_date.strftime('%b %d, %Y') }}</td>
+                                        <td><span class="badge bg-secondary shadow-sm"><i class="fas fa-ban me-1"></i>Cancelled</span></td>
+                                    </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="bookAppointmentModal" tabindex="-1" aria-labelledby="bookAppointmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width:520px;">
+        <div class="modal-content border-0" style="border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,0.18);">
+
+            <div class="modal-header text-white border-0 px-4 py-3"
+                 style="background:linear-gradient(135deg,#1565c0,#0d47a1); border-radius:12px 12px 0 0;">
+                <div>
+                    <h5 class="modal-title fw-bold mb-0" id="bookAppointmentModalLabel">
+                        <i class="fas fa-calendar-plus me-2 opacity-75"></i>New Appointment
+                    </h5>
+                    <small class="opacity-75">Complete all required fields to schedule</small>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form method="POST" action="{{ url_for('appointments.book_appointment') }}" id="bookAppointmentForm">
+                <div class="modal-body px-4 py-3" style="overflow-y:auto; max-height:68vh;">
+
+                    <input type="hidden" id="patientName" name="patient_name">
+                    <script id="patientData" type="application/json">
+                    [{% for p in patients %}{"name":"{{ p.full_name | replace('"','&quot;') }}","contact":"{{ p.contact_number or '' }}","email":"{{ p.email or '' }}","purok":"{{ p.purok or '' }}"}{% if not loop.last %},{% endif %}{% endfor %}]
+                    </script>
+
+                    <div class="mb-1 pb-1 border-bottom border-2" style="border-color:#e3eaf5!important;">
+                        <span class="text-uppercase fw-bold small" style="color:#1565c0; letter-spacing:.06em;">
+                            <i class="fas fa-user me-1"></i>Patient Information
+                        </span>
+                    </div>
+
+                    <div class="mb-3 mt-2">
+                        <label class="form-label fw-semibold text-secondary small mb-1">Patient Full Name <span class="text-danger">*</span></label>
+
+                        <div style="position:relative;">
+                            <div class="input-group shadow-sm">
+                                <button type="button" class="input-group-text bg-white border-end-0" id="searchPatientBtn" aria-label="Focus patient search" style="border-radius:8px 0 0 8px; cursor: pointer;" title="Click to search">
+                                    <i class="fas fa-search text-primary"></i>
+                                </button>
+                                <input type="text" class="form-control border-start-0 ps-1" id="patientSearch"
+                                       placeholder="Search patient by name..."
+                                       autocomplete="off"
+                                       style="border-radius:0 8px 8px 0; font-size:.95rem;">
+                            </div>
+
+                            <div id="patientDropdown"
+                                 style="display:none; position:absolute; left:0; right:0; top:100%; z-index:1060;
+                                        background:#fff; border:1px solid #c9d8f0; border-top:none;
+                                        border-radius:0 0 10px 10px; max-height:210px; overflow-y:auto;
+                                        box-shadow:0 8px 24px rgba(0,0,0,0.12);">
+                                <div id="patientListItems"></div>
+                                  <div id="addNewRow" role="button" tabindex="0" aria-label="Register new patient from search" style="display:none; padding:11px 16px; cursor:pointer;
+                                     border-top:2px solid #ffc107; background:#fffdf0;"
+                                     onmouseenter="this.style.background='#fff3cd'"
+                                     onmouseleave="this.style.background='#fffdf0'">
+                                    <i class="fas fa-user-plus text-warning me-2"></i>
+                                    <span class="fw-semibold" style="color:#856404;">
+                                        Register "<span id="addNewLabel"></span>" as new patient &amp; book
+                                    </span>
+                                </div>
+                                <div id="noPatientMatch" style="display:none;"
+                                     class="px-3 py-2 text-center text-muted small fst-italic">
+                                    No matching registered patient found
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-text mt-1">For new patient registration, use: Last Name - First Name - Second Name - M.</div>
+
+                        <div id="selectedPatientBadge" style="display:none; margin-top:10px;">
+                            </div>
+                    </div>
+
+                    <div id="newPatientFields" style="display:none; background:#fffdf0;"
+                        class="mb-3 p-3 rounded-3 border border-warning">
+                        <p class="fw-semibold mb-2" style="color:#856404; font-size:.85rem;">
+                            <i class="fas fa-clipboard-list me-1"></i>
+                            Patient Registration — Required fields to create record
+                        </p>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Full Name <span class="text-danger">*</span></label>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm" id="newLastName" placeholder="Last Name" pattern="[A-Za-zÑñ]+( [A-Za-zÑñ]+)*" style="border-radius:6px;">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary mb-1">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm" id="newFirstName" placeholder="First Name" pattern="[A-Za-zÑñ]+( [A-Za-zÑñ]+)*" style="border-radius:6px;">
+                            </div>
+                            <div class="col-8">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Second Name <span class="text-muted">(optional)</span></label>
+                                <input type="text" class="form-control form-control-sm" id="newSecondName" placeholder="Second Name" pattern="[A-Za-zÑñ]+( [A-Za-zÑñ]+)*" style="border-radius:6px;">
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Middle Initial</label>
+                                <input type="text" class="form-control form-control-sm text-uppercase" id="newMiddleInitial" placeholder="N/A" maxlength="3" pattern="([A-Z]|N/A)" style="border-radius:6px;" list="middleInitialOptionsAppointments">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary mb-1">
+                                    Birth Date <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" class="form-control form-control-sm" id="newBirthDate"
+                                       name="new_birth_date" max="{{ today }}" style="border-radius:6px;">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary mb-1">
+                                    Gender <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select form-select-sm" id="newGender" name="new_gender" style="border-radius:6px;">
+                                    <option value="Female">Female</option>
+                                    <option value="Male">Male</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Purok / Zone <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-sm" id="newPurok" name="new_purok" style="border-radius:6px;">
+                                    {% for purok in purok_choices %}
+                                    <option value="{{ purok }}">{{ purok }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary small mb-1">
+                            Contact Number
+                            <span class="fw-normal text-muted">(for confirmation call)</span>
+                        </label>
+                        <div class="input-group shadow-sm">
+                            <span class="input-group-text bg-white border-end-0" style="border-radius:8px 0 0 8px;">
+                                <i class="fas fa-phone text-secondary"></i>
+                            </span>
+                            <input type="tel" class="form-control border-start-0 ps-1" id="contactNumber"
+                                   name="contact_number" placeholder="e.g., 09171234567"
+                                   autocomplete="off"
+                                   maxlength="11" 
+                                pattern="\d{0,11}"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,11);"
+                                inputmode="numeric"
+                                title="Contact number must be digits only, maximum 11 digits"
+                                   style="border-radius:0 8px 8px 0; font-size:.95rem;">
+                        </div>
+                        <div class="form-text mt-1">
+                            <i class="fas fa-info-circle me-1 text-primary opacity-75"></i>
+                            Auto-filled for registered patients.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary small mb-1">
+                            Email Address
+                            <span class="fw-normal text-muted">(for reminders)</span>
+                        </label>
+                        <div class="input-group shadow-sm">
+                            <span class="input-group-text bg-white border-end-0" style="border-radius:8px 0 0 8px;">
+                                <i class="fas fa-envelope text-secondary"></i>
+                            </span>
+                            <input type="email" class="form-control border-start-0 ps-1" id="patientEmail"
+                                   name="email" placeholder="name@example.com"
+                                   autocomplete="off"
+                                   style="border-radius:0 8px 8px 0; font-size:.95rem;">
+                        </div>
+                    </div>
+
+                    <div class="mb-1 pb-1 border-bottom border-2 mt-3" style="border-color:#e3eaf5!important;">
+                        <span class="text-uppercase fw-bold small" style="color:#1565c0; letter-spacing:.06em;">
+                            <i class="fas fa-calendar-alt me-1"></i>Appointment Details
+                        </span>
+                    </div>
+
+                    <div class="mb-3 mt-2">
+                        <label class="form-label fw-semibold text-secondary small mb-1">
+                            Healthcare Worker <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group shadow-sm">
+                            <span class="input-group-text bg-white border-end-0" style="border-radius:8px 0 0 8px;">
+                                <i class="fas fa-user-md text-secondary"></i>
+                            </span>
+                            <input type="text" class="form-control border-start-0 ps-1" id="workerName"
+                                   name="worker_name" list="workerList"
+                                   placeholder="Type to search assigned worker..."
+                                   required autocomplete="off"
+                                   style="border-radius:0 8px 8px 0; font-size:.95rem;">
+                            <datalist id="workerList">
+                                {% for w in health_workers %}<option value="{{ w.full_name }}">{% endfor %}
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold text-secondary small mb-1">
+                                Date <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" class="form-control shadow-sm" id="appointmentDate"
+                                   name="appointment_date" min="{{ today }}" required
+                                   style="border-radius:8px; font-size:.95rem;">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold text-secondary small mb-1">
+                                Time <span class="text-danger">*</span>
+                            </label>
+                            <input type="time" class="form-control shadow-sm" id="appointmentTime"
+                                   name="appointment_time" required
+                                   style="border-radius:8px; font-size:.95rem;">
+                        </div>
+                    </div>
+
+                    <div id="availabilityCheck" class="alert alert-warning border-0 py-2 small mb-3"
+                        style="display:none; border-radius:8px; background:#fff3cd;">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        <span id="availabilityMessage"></span>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold text-secondary small mb-1">Reason for Visit</label>
+                        <textarea class="form-control shadow-sm" id="appointmentReason" name="reason" rows="2"
+                                  placeholder="e.g., Routine check-up, Vaccination, Prenatal visit"
+                                  style="border-radius:8px; font-size:.95rem; resize:none;"></textarea>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer border-0 px-4 py-3 gap-2"
+                     style="background:#f8fafd; border-radius:0 0 12px 12px;">
+                    <button type="button" class="btn btn-light border fw-semibold px-4"
+                            style="border-radius:8px;" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary fw-semibold px-4" id="bookButton" disabled
+                            style="border-radius:8px; background:#1565c0; border-color:#1565c0;">
+                        <i class="fas fa-calendar-check me-2"></i>Confirm Appointment
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<datalist id="middleInitialOptionsAppointments">
+    <option value="N/A"></option>
+</datalist>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const allPatients  = JSON.parse(document.getElementById('patientData').textContent);
+    const searchInput  = document.getElementById('patientSearch');
+    const searchBtn    = document.getElementById('searchPatientBtn');
+    const dropdown     = document.getElementById('patientDropdown');
+    const listItems    = document.getElementById('patientListItems');
+    const addNewRow    = document.getElementById('addNewRow');
+    const addNewLabel  = document.getElementById('addNewLabel');
+    const noMatch      = document.getElementById('noPatientMatch');
+    const badge        = document.getElementById('selectedPatientBadge');
+    const clearPatient = document.getElementById('clearPatient');
+    const hiddenName   = document.getElementById('patientName');
+    const contactInput = document.getElementById('contactNumber');
+    const emailInput   = document.getElementById('patientEmail');
+    const newFields    = document.getElementById('newPatientFields');
+    const newLastName  = document.getElementById('newLastName');
+    const newFirstName = document.getElementById('newFirstName');
+    const newSecondName = document.getElementById('newSecondName');
+    const newMiddleInitial = document.getElementById('newMiddleInitial');
+    const newBirthDate = document.getElementById('newBirthDate');
+    const newGender    = document.getElementById('newGender');
+    const submitBtn    = document.getElementById('bookButton');
+    const workerInput  = document.getElementById('workerName');
+    const dateInput    = document.getElementById('appointmentDate');
+    const timeInput    = document.getElementById('appointmentTime');
+    const alertBox     = document.getElementById('availabilityCheck');
+    const alertMsg     = document.getElementById('availabilityMessage');
+    const appointmentForm = document.getElementById('bookAppointmentForm');
+
+    function titleCaseWords(value) {
+        return value
+            .toLowerCase()
+            .split(' ')
+            .filter(part => part.trim() !== '')
+            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+            .join(' ');
+    }
+
+    function composeNewPatientName() {
+        const last = titleCaseWords((newLastName?.value || '').replace(/[^A-Za-zÑñ\s]/g, '').trim());
+        const first = titleCaseWords((newFirstName?.value || '').replace(/[^A-Za-zÑñ\s]/g, '').trim());
+        const second = titleCaseWords((newSecondName?.value || '').replace(/[^A-Za-zÑñ\s]/g, '').trim());
+        const rawMiddle = (newMiddleInitial?.value || '').trim().toUpperCase();
+        let middle = '';
+        if (rawMiddle === 'N/A' || rawMiddle === 'NA') {
+            middle = 'N/A';
+        } else {
+            middle = rawMiddle.replace(/[^A-Z]/g, '').slice(0, 1);
+        }
+
+        if (newLastName) newLastName.value = last;
+        if (newFirstName) newFirstName.value = first;
+        if (newSecondName) newSecondName.value = second;
+        if (newMiddleInitial) newMiddleInitial.value = middle;
+
+        if (!last || !first) return '';
+
+        if (second) {
+            return (middle && middle !== 'N/A')
+                ? `${last} - ${first} - ${second} - ${middle}.`
+                : `${last} - ${first} - ${second}`;
+        }
+
+        return `${last} - ${first}`;
+    }
+
+    // ── Dropdown ──────────────────────────────────────────────────────────────
+    function buildDropdown(query) {
+        const q = query.toLowerCase().trim();
+        const matches = q ? allPatients.filter(p => p.name.toLowerCase().includes(q)) : allPatients;
+        listItems.innerHTML = '';
+        matches.forEach((p, i) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'padding:10px 16px; cursor:pointer; border-bottom:1px solid #f0f0f0; transition:background .1s;';
+            row.innerHTML =
+                '<div style="font-weight:600; font-size:.9rem; color:#1a1a2e;">' + p.name + '</div>' +
+                (p.purok ? '<div style="font-size:.78rem; color:#6c757d;">' + p.purok + '</div>' : '');
+            row.addEventListener('mouseenter', () => row.style.background = '#f0f7ff');
+            row.addEventListener('mouseleave', () => row.style.background = '');
+            row.addEventListener('mousedown', e => { e.preventDefault(); pickExisting(p); });
+            listItems.appendChild(row);
+        });
+        noMatch.style.display = (q && matches.length === 0) ? 'block' : 'none';
+        if (q) { addNewLabel.textContent = query.trim(); addNewRow.style.display = 'block'; }
+        else   { addNewRow.style.display = 'none'; }
+    }
+
+    function showDropdown() { buildDropdown(searchInput.value); dropdown.style.display = 'block'; }
+    function hideDropdown() { dropdown.style.display = 'none'; }
+
+    // ── Pick existing ─────────────────────────────────────────────────────────
+    function pickExisting(p) {
+        hiddenName.value = p.name;
+        searchInput.value = '';
+        hideDropdown();
+        renderBadge(p.name, p.purok, 'existing');
+        contactInput.value = p.contact || '';
+        emailInput.value = p.email || '';
+        contactInput.classList.toggle('border-success', !!p.contact);
+        newFields.style.display = 'none';
+        newBirthDate.required = false;
+        newGender.required = false;
+        submitBtn.disabled = false;
+        submitBtn.style.background = '#1565c0';
+        submitBtn.style.borderColor = '#1565c0';
+        submitBtn.className = 'btn btn-primary fw-semibold px-4';
+        submitBtn.style.borderRadius = '8px';
+        submitBtn.innerHTML = '<i class="fas fa-calendar-check me-2"></i>Confirm Appointment';
+    }
+
+    // ── Pick new ──────────────────────────────────────────────────────────────
+    function pickNew(name) {
+        hiddenName.value = '';
+        searchInput.value = '';
+        hideDropdown();
+        renderBadge('New patient', 'Complete name boxes below', 'new');
+        contactInput.value = '';
+        emailInput.value = '';
+        contactInput.classList.remove('border-success');
+        newFields.style.display = 'block';
+        if (newLastName) newLastName.required = true;
+        if (newFirstName) newFirstName.required = true;
+        if (newSecondName) newSecondName.required = false;
+        if (newMiddleInitial) newMiddleInitial.required = false;
+        newBirthDate.required = true;
+        newGender.required = true;
+        submitBtn.disabled = true;
+        submitBtn.className = 'btn fw-semibold px-4';
+        submitBtn.style.cssText = 'border-radius:8px; background:#e65100; border-color:#e65100; color:#fff;';
+        submitBtn.innerHTML = '<i class="fas fa-user-plus me-2"></i>Register &amp; Book Appointment';
+
+        const parsed = (name || '').split(' - ').map(p => p.trim());
+        if (parsed.length === 4) {
+            if (newLastName) newLastName.value = parsed[0] || '';
+            if (newFirstName) newFirstName.value = parsed[1] || '';
+            if (newSecondName) newSecondName.value = parsed[2] || '';
+            if (newMiddleInitial) {
+                const parsedMiddle = (parsed[3] || '').replace('.', '').toUpperCase();
+                newMiddleInitial.value = (parsedMiddle === 'N/A' || parsedMiddle === 'NA')
+                    ? 'N/A'
+                    : parsedMiddle.slice(0, 1);
+            }
+        } else {
+            if (newLastName) newLastName.value = titleCaseWords(name || '');
+            if (newFirstName) newFirstName.value = '';
+            if (newSecondName) newSecondName.value = '';
+            if (newMiddleInitial) newMiddleInitial.value = '';
+        }
+
+        updateNewPatientSubmitState();
+    }
+
+    // ── Render selected patient card ──────────────────────────────────────────
+    function renderBadge(name, sub, type) {
+        const isNew = type === 'new';
+        const borderColor = isNew ? '#ffc107' : '#198754';
+        const bgColor     = isNew ? '#fffdf0' : '#f0fff4';
+        const iconClass   = isNew ? 'fas fa-user-plus' : 'fas fa-check-circle';
+        const iconColor   = isNew ? '#856404' : '#198754';
+        const labelColor  = isNew ? '#856404' : '#155724';
+
+        badge.style.display = 'block';
+        badge.innerHTML =
+            '<div style="display:flex; align-items:center; justify-content:space-between; ' +
+            'padding:10px 14px; border:1.5px solid ' + borderColor + '; border-radius:8px; background:' + bgColor + ';">' +
+                '<div style="display:flex; align-items:center; gap:10px;">' +
+                    '<div style="width:36px; height:36px; border-radius:50%; background:' + borderColor + '20; ' +
+                    'display:flex; align-items:center; justify-content:center;">' +
+                        '<i class="' + iconClass + '" style="color:' + iconColor + '; font-size:.9rem;"></i>' +
+                    '</div>' +
+                    '<div>' +
+                        '<div style="font-weight:700; font-size:.95rem; color:#1a1a2e;">' + name + '</div>' +
+                        '<div style="font-size:.78rem; color:' + labelColor + ';">' + sub + '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<button type="button" id="clearPatient" ' +
+                'style="background:none; border:1px solid #ccc; border-radius:6px; padding:3px 10px; ' +
+                'font-size:.78rem; color:#555; cursor:pointer; white-space:nowrap;">' +
+                    '<i class="fas fa-undo me-1"></i>Change' +
+                '</button>' +
+            '</div>';
+
+        document.getElementById('clearPatient').addEventListener('click', clearSelection);
+    }
+
+    // ── Clear ─────────────────────────────────────────────────────────────────
+    function clearSelection() {
+        hiddenName.value = '';
+        searchInput.value = '';
+        badge.style.display = 'none';
+        badge.innerHTML = '';
+        newFields.style.display = 'none';
+        if (newLastName) { newLastName.value = ''; newLastName.required = false; }
+        if (newFirstName) { newFirstName.value = ''; newFirstName.required = false; }
+        if (newSecondName) { newSecondName.value = ''; newSecondName.required = false; }
+        if (newMiddleInitial) { newMiddleInitial.value = ''; newMiddleInitial.required = false; }
+        newBirthDate.required = false;
+        newGender.required = false;
+        contactInput.value = '';
+        emailInput.value = '';
+        contactInput.classList.remove('border-success');
+        submitBtn.disabled = true;
+        submitBtn.className = 'btn btn-primary fw-semibold px-4';
+        submitBtn.style.cssText = 'border-radius:8px; background:#1565c0; border-color:#1565c0;';
+        submitBtn.innerHTML = '<i class="fas fa-calendar-check me-2"></i>Confirm Appointment';
+        searchInput.focus();
+    }
+
+    function updateNewPatientSubmitState() {
+        if (newFields.style.display !== 'block') return;
+        const composed = composeNewPatientName();
+        const hasBirth = !!newBirthDate.value;
+        const hasGender = !!newGender.value;
+        const canSubmit = !!composed && hasBirth && hasGender;
+        hiddenName.value = composed;
+        submitBtn.disabled = !canSubmit;
+    }
+
+    // ── Events ────────────────────────────────────────────────────────────────
+    searchInput.addEventListener('focus', showDropdown);
+    searchInput.addEventListener('input', showDropdown);
+    addNewRow.addEventListener('mousedown', e => { e.preventDefault(); pickNew(searchInput.value.trim()); });
+    document.addEventListener('click', e => {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target) && !(searchBtn && searchBtn.contains(e.target))) {
+            hideDropdown();
+        }
+    });
+    document.getElementById('bookAppointmentModal')
+        .addEventListener('hidden.bs.modal', clearSelection);
+
+    [newLastName, newFirstName, newSecondName].forEach(el => {
+        if (!el) return;
+        el.addEventListener('input', function() {
+            this.value = this.value.replace(/[^A-Za-zÑñ\s]/g, '');
+            updateNewPatientSubmitState();
+        });
+        el.addEventListener('blur', function() {
+            this.value = titleCaseWords(this.value);
+            updateNewPatientSubmitState();
+        });
+    });
+
+    if (newMiddleInitial) {
+        newMiddleInitial.addEventListener('input', function() {
+            const raw = this.value.toUpperCase().replace(/[^A-Z\/]/g, '');
+            if (raw === 'N' || raw === 'N/' || raw === 'N/A') {
+                this.value = raw === 'N' ? 'N' : (raw === 'N/' ? 'N/' : 'N/A');
+            } else {
+                this.value = raw.replace(/[^A-Z]/g, '').slice(0, 1);
+            }
+            updateNewPatientSubmitState();
+        });
+        newMiddleInitial.addEventListener('blur', function() {
+            const clean = this.value.trim().toUpperCase();
+            if (clean === 'NA' || clean === 'N/A') {
+                this.value = 'N/A';
+            }
+            updateNewPatientSubmitState();
+        });
+    }
+
+    [newBirthDate, newGender].forEach(el => {
+        if (!el) return;
+        el.addEventListener('change', updateNewPatientSubmitState);
+    });
+
+    // ── Search Icon Click ─────────────────────────────────────────────────────
+    if (searchBtn) {
+        searchBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            searchInput.focus();
+            showDropdown();
+        });
+        searchBtn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                searchInput.focus();
+                showDropdown();
+            }
+        });
+    }
+
+    addNewRow.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            pickNew(searchInput.value.trim());
+        }
+    });
+
+    // ── Conflict check ────────────────────────────────────────────────────────
+    function checkConflict() {
+        const worker = workerInput.value, date = dateInput.value, time = timeInput.value;
+        if (!worker || !date || !time) return;
+        fetch('/appointment/check-availability?worker_name=' + encodeURIComponent(worker) + '&date=' + date + '&time=' + time)
+            .then(r => r.json())
+            .then(data => {
+                alertBox.style.display = data.available ? 'none' : 'block';
+                if (!data.available) alertMsg.textContent = data.message;
+            }).catch(() => {});
+    }
+    [workerInput, dateInput, timeInput].forEach(el => el.addEventListener('change', checkConflict));
+
+    if (appointmentForm) {
+        appointmentForm.addEventListener('submit', function(e) {
+            if (newFields.style.display === 'block') {
+                const composed = composeNewPatientName();
+                hiddenName.value = composed;
+                if (!composed) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

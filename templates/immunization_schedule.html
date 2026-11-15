@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block title %}Immunization Schedule - BHCMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4" style="background-color: #f8f9fa; min-height: 100vh;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold text-gray-800 mb-1">
+                <i class="fas fa-syringe text-warning me-2"></i>Immunization Tracker
+            </h1>
+            <p class="text-muted mb-0 small">Monitor upcoming and overdue vaccines for children.</p>
+        </div>
+        <button type="button" class="btn btn-white border shadow-sm text-muted bg-white" onclick="window.print()">
+            <i class="fas fa-print me-2"></i>Print Schedule
+        </button>
+    </div>
+
+    <div class="row g-4">
+        
+        {# ── OVERDUE VACCINES ───────────────────────────────────────────────── #}
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-danger text-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="fas fa-exclamation-circle me-2"></i>Overdue Vaccines</h5>
+                    <span class="badge bg-white text-danger rounded-pill">{{ vaccines_data.overdue|length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for item in vaccines_data.overdue %}
+                        <div class="list-group-item p-3 border-start border-5 border-danger mb-1">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1 me-3">
+                                    <h6 class="fw-bold text-dark mb-1">{{ item.patient.full_name }}</h6>
+                                    <div class="text-muted small">
+                                        <i class="fas fa-syringe me-1 text-danger"></i> {{ item.vaccine.vaccine_name }}
+                                    </div>
+                                    <div class="text-danger small fw-bold mt-1">
+                                        Due: {{ item.vaccine.scheduled_date.strftime('%b %d, %Y') }}
+                                    </div>
+
+                                    {# Stock indicator badge #}
+                                    {% if not item.stock_found %}
+                                        <div class="mt-1">
+                                            <span class="badge bg-secondary" title="No matching item found in inventory">
+                                                <i class="fas fa-question-circle me-1"></i>Not in Inventory
+                                            </span>
+                                        </div>
+                                    {% elif item.stock_qty <= 0 %}
+                                        <div class="mt-1">
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times-circle me-1"></i>Out of Stock
+                                            </span>
+                                        </div>
+                                    {% elif item.stock_qty <= item.stock_item.min_stock_level %}
+                                        <div class="mt-1">
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>Low Stock: {{ item.stock_qty }} left
+                                            </span>
+                                        </div>
+                                    {% else %}
+                                        <div class="mt-1">
+                                            <span class="badge bg-success bg-opacity-75">
+                                                <i class="fas fa-box me-1"></i>{{ item.stock_qty }} in stock
+                                            </span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="d-flex flex-column gap-1 align-items-end">
+                                    <a href="{{ url_for('patients.patients') }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-user me-1"></i>View
+                                    </a>
+
+                                    {% if item.stock_found and item.stock_qty <= 0 %}
+                                        {# Hard-disabled: out of stock #}
+                                        <button type="button" class="btn btn-sm btn-secondary" disabled
+                                                title="Cannot administer — {{ item.stock_item.name }} is out of stock">
+                                            <i class="fas fa-ban me-1"></i>Out of Stock
+                                        </button>
+                                    {% else %}
+                                        <form method="POST"
+                                              action="{{ url_for('complete_immunization', schedule_id=item.vaccine.id) }}"
+                                              onsubmit="return confirm('Administer {{ item.vaccine.vaccine_name }} to {{ item.patient.full_name }}?\n\n{% if item.stock_found %}1 unit will be deducted from inventory ({{ item.stock_qty }} currently available).{% else %}Warning: this vaccine was not found in inventory. Stock will NOT be deducted automatically.{% endif %}')">
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                <i class="fas fa-check me-1"></i>Administer
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-check-circle fa-3x mb-3 text-success opacity-50"></i>
+                            <p>Good job! No overdue vaccines.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# ── DUE THIS WEEK ──────────────────────────────────────────────────── #}
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-warning text-dark py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="fas fa-calendar-check me-2"></i>Due This Week</h5>
+                    <span class="badge bg-dark text-warning rounded-pill">{{ vaccines_data.due_this_week|length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for item in vaccines_data.due_this_week %}
+                        <div class="list-group-item p-3 border-start border-5 border-warning mb-1">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1 me-3">
+                                    <h6 class="fw-bold text-dark mb-1">{{ item.patient.full_name }}</h6>
+                                    <div class="text-muted small">
+                                        <i class="fas fa-syringe me-1 text-warning"></i> {{ item.vaccine.vaccine_name }}
+                                    </div>
+                                    <div class="text-warning-emphasis small fw-bold mt-1">
+                                        Scheduled: {{ item.vaccine.scheduled_date.strftime('%b %d, %Y') }}
+                                    </div>
+
+                                    {# Stock indicator badge #}
+                                    {% if not item.stock_found %}
+                                        <div class="mt-1">
+                                            <span class="badge bg-secondary" title="No matching item found in inventory">
+                                                <i class="fas fa-question-circle me-1"></i>Not in Inventory
+                                            </span>
+                                        </div>
+                                    {% elif item.stock_qty <= 0 %}
+                                        <div class="mt-1">
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times-circle me-1"></i>Out of Stock
+                                            </span>
+                                        </div>
+                                    {% elif item.stock_qty <= item.stock_item.min_stock_level %}
+                                        <div class="mt-1">
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>Low Stock: {{ item.stock_qty }} left
+                                            </span>
+                                        </div>
+                                    {% else %}
+                                        <div class="mt-1">
+                                            <span class="badge bg-success bg-opacity-75">
+                                                <i class="fas fa-box me-1"></i>{{ item.stock_qty }} in stock
+                                            </span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="d-flex flex-column gap-1 align-items-end">
+                                    {# Notify button stays #}
+                                    <form method="POST" action="{{ url_for('notify_immunization', schedule_id=item.vaccine.id) }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-warning text-dark">
+                                            <i class="fas fa-bell me-1"></i>Notify
+                                        </button>
+                                    </form>
+
+                                    {% if item.stock_found and item.stock_qty <= 0 %}
+                                        <button type="button" class="btn btn-sm btn-secondary" disabled
+                                                title="Cannot administer — {{ item.stock_item.name }} is out of stock">
+                                            <i class="fas fa-ban me-1"></i>Out of Stock
+                                        </button>
+                                    {% else %}
+                                        <form method="POST"
+                                              action="{{ url_for('complete_immunization', schedule_id=item.vaccine.id) }}"
+                                              onsubmit="return confirm('Administer {{ item.vaccine.vaccine_name }} to {{ item.patient.full_name }}?\n\n{% if item.stock_found %}1 unit will be deducted from inventory ({{ item.stock_qty }} currently available).{% else %}Warning: this vaccine was not found in inventory. Stock will NOT be deducted automatically.{% endif %}')">
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                <i class="fas fa-check me-1"></i>Administer
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-calendar-times fa-3x mb-3 opacity-25"></i>
+                            <p>No vaccines scheduled for this week.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# ── UPCOMING LATER ─────────────────────────────────────────────────── #}
+        <div class="col-12">
+            <div class="card border-0 shadow-sm mt-3">
+                <div class="card-header bg-light py-3">
+                    <h6 class="mb-0 fw-bold text-muted text-uppercase">Upcoming Later</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="bg-white">
+                                <tr>
+                                    <th class="ps-4">Patient</th>
+                                    <th>Vaccine</th>
+                                    <th>Scheduled Date</th>
+                                    <th class="text-center">Stock</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in vaccines_data.due_later[:10] %}
+                                <tr>
+                                    <td class="ps-4 fw-bold">{{ item.patient.full_name }}</td>
+                                    <td>{{ item.vaccine.vaccine_name }}</td>
+                                    <td>{{ item.vaccine.scheduled_date.strftime('%b %d, %Y') }}</td>
+                                    <td class="text-center">
+                                        {% if not item.stock_found %}
+                                            <span class="badge bg-secondary"><i class="fas fa-question-circle me-1"></i>N/A</span>
+                                        {% elif item.stock_qty <= 0 %}
+                                            <span class="badge bg-danger">Out of Stock</span>
+                                        {% elif item.stock_qty <= item.stock_item.min_stock_level %}
+                                            <span class="badge bg-warning text-dark">Low: {{ item.stock_qty }}</span>
+                                        {% else %}
+                                            <span class="badge bg-success bg-opacity-75">{{ item.stock_qty }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info text-dark">Upcoming</span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if item.stock_found and item.stock_qty <= 0 %}
+                                            <button type="button" class="btn btn-sm btn-secondary" disabled title="Out of stock">
+                                                <i class="fas fa-ban me-1"></i>Out of Stock
+                                            </button>
+                                        {% else %}
+                                            <form method="POST"
+                                                  action="{{ url_for('complete_immunization', schedule_id=item.vaccine.id) }}"
+                                                  onsubmit="return confirm('Administer {{ item.vaccine.vaccine_name }} to {{ item.patient.full_name }} early?\n\n{% if item.stock_found %}1 unit will be deducted from inventory ({{ item.stock_qty }} currently available).{% else %}Warning: not in inventory — stock will NOT be deducted automatically.{% endif %}')">
+                                                <button type="submit" class="btn btn-sm btn-outline-success">
+                                                    <i class="fas fa-check me-1"></i>Administer
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="6" class="text-center py-3 text-muted">No future schedules found.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

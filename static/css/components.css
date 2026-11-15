@@ -1,0 +1,29 @@
+/* Buttons */
+.btn {
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 1.2rem;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+/* Badges */
+.badge {
+    padding: 0.5em 0.8em;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.bg-success-soft { background: rgba(46, 204, 113, 0.15); color: #27ae60; }
+.bg-danger-soft { background: rgba(231, 76, 60, 0.15); color: #c0392b; }
+.bg-warning-soft { background: rgba(241, 196, 15, 0.15); color: #f39c12; }
+.bg-info-soft { background: rgba(52, 152, 219, 0.15); color: #2980b9; }

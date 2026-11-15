@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}New Household Profile - BHCMS{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold text-dark mb-1">New Household Profile</h2>
+                    <p class="text-muted mb-0">Record a new family survey for your Purok.</p>
+                </div>
+                <a href="{{ url_for('bhw_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header bg-primary text-white p-4">
+                    <h5 class="mb-0"><i class="fas fa-home me-2"></i>Household Information</h5>
+                </div>
+                
+                <div class="card-body p-4 p-md-5">
+                    <form action="{{ url_for('household_profile') }}" method="POST" id="householdForm">
+                        
+                        <h6 class="text-uppercase text-muted fw-bold small mb-3">Head of Family</h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-12">
+                                <label for="household_head_name" class="form-label fw-bold">Full Name of Head</label>
+                                <input type="hidden" id="household_head_name" name="household_head_name" required>
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label mb-1">Last Name <span class="text-danger">*</span></label>
+                                        <input type="text" id="head_last_name" class="form-control form-control-lg" placeholder="Last Name" required pattern="[A-Za-zÑñ]+( [A-Za-zÑñ]+)*" title="Use letters and spaces only.">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label mb-1">First Name <span class="text-danger">*</span></label>
+                                        <input type="text" id="head_first_name" class="form-control form-control-lg" placeholder="First Name" required pattern="[A-Za-zÑñ]+( [A-Za-zÑñ]+)*" title="Use letters and spaces only.">
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label class="form-label mb-1">Second Name <span class="text-muted">(optional)</span></label>
+                                        <input type="text" id="head_second_name" class="form-control form-control-lg" placeholder="Second Name" pattern="[A-Za-zÑñ]+( [A-Za-zÑñ]+)*" title="Use letters and spaces only.">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label mb-1">Middle Initial</label>
+                                        <input type="text" id="head_middle_initial" class="form-control form-control-lg text-uppercase" placeholder="N/A" maxlength="3" pattern="([A-Z]|N/A)" title="Enter one capital letter or N/A.">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="contact_number" class="form-label">Contact Number</label>
+                                <input type="tel" class="form-control" id="contact_number" name="contact_number" placeholder="09xxxxxxxxx" maxlength="11" pattern="\d{0,11}" title="Contact number must be digits only, max 11 digits.">
+                                <div class="invalid-feedback">Digits only, maximum 11 digits.</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="number_of_members" class="form-label fw-bold text-primary">Total Members</label>
+                                <input type="number" class="form-control" id="number_of_members" name="number_of_members" min="1" value="1" required>
+                            </div>
+                        </div>
+
+                        <hr class="text-muted opacity-25 my-4">
+
+                        <h6 class="text-uppercase text-muted fw-bold small mb-3">Location & Address</h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="purok" class="form-label fw-bold">Purok / Zone</label>
+                                <select class="form-select form-select-lg" id="purok" name="purok" required>
+                                    <option value="" selected disabled>Select Purok...</option>
+                                    {% for purok in puroks %}
+                                    <option value="{{ purok }}">{{ purok }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="address" class="form-label">Specific Address / Landmark</label>
+                                <input type="text" class="form-control form-control-lg" id="address" name="address" placeholder="e.g. Near Chapel">
+                            </div>
+                        </div>
+
+                        <hr class="text-muted opacity-25 my-4">
+
+                        <h6 class="text-uppercase text-muted fw-bold small mb-3">Sanitation & Utilities</h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="water_source" class="form-label">Water Source</label>
+                                <select class="form-select" id="water_source" name="water_source">
+                                    <option value="Tap Water">Level III (Tap Water)</option>
+                                    <option value="Deep Well">Level II (Deep Well)</option>
+                                    <option value="Spring/River">Level I (Spring/River)</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="sanitation_type" class="form-label">Toilet Facility</label>
+                                <select class="form-select" id="sanitation_type" name="sanitation_type">
+                                    <option value="Water Sealed">Water Sealed (Flush)</option>
+                                    <option value="Open Pit">Open Pit</option>
+                                    <option value="None">None / Shared</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12 mt-3">
+                                <div class="form-check form-switch p-3 bg-light rounded-3 border">
+                                    <input class="form-check-input ms-0 me-3" type="checkbox" id="electricity" name="electricity">
+                                    <label class="form-check-label fw-bold" for="electricity">Has Electricity Connection?</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="notes" class="form-label">Additional Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Any health concerns or remarks..."></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('bhw_dashboard') }}" class="btn btn-light btn-lg px-4">Cancel</a>
+                            
+                            <button type="submit" class="btn btn-primary btn-lg px-5">
+                                <i class="fas fa-save me-2"></i> Save Profile
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Digits-only, max 11 for contact number
+    const contactInput = document.getElementById('contact_number');
+    if (contactInput) {
+        contactInput.addEventListener('input', function() {
+            this.value = this.value.replace(/\D/g, '').slice(0, 11);
+        });
+        contactInput.addEventListener('keypress', function(e) {
+            if (!/[0-9]/.test(e.key)) e.preventDefault();
+            if (this.value.length >= 11) e.preventDefault();
+        });
+    }
+
+    const householdForm = document.getElementById('householdForm');
+    const hiddenName = document.getElementById('household_head_name');
+    const lastName = document.getElementById('head_last_name');
+    const firstName = document.getElementById('head_first_name');
+    const secondName = document.getElementById('head_second_name');
+    const middleInitial = document.getElementById('head_middle_initial');
+
+    [lastName, firstName, secondName].forEach(el => {
+        if (!el) return;
+        window.BHCMSNameUtils.bindNameTextInput(el);
+    });
+
+    if (middleInitial) {
+        window.BHCMSNameUtils.bindMiddleInitialInput(middleInitial);
+    }
+
+    if (householdForm) {
+        householdForm.addEventListener('submit', function(e) {
+            const last = window.BHCMSNameUtils.sanitizeNamePart(lastName?.value || '').trim();
+            const first = window.BHCMSNameUtils.sanitizeNamePart(firstName?.value || '').trim();
+            const second = window.BHCMSNameUtils.sanitizeNamePart(secondName?.value || '').trim();
+
+            const rawMiddle = (middleInitial?.value || '').trim().toUpperCase();
+            let middle = '';
+            if (rawMiddle === 'N/A' || rawMiddle === 'NA') {
+                middle = 'N/A';
+            } else {
+                middle = rawMiddle.replace(/[^A-Z]/g, '').slice(0, 1);
+            }
+
+            if (!last || !first) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+
+            const hasSecond = !!second;
+            const hasMiddleLetter = !!middle && middle !== 'N/A';
+            if (hasSecond && !hasMiddleLetter) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+
+            if (!hasSecond && hasMiddleLetter) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+
+            lastName.value = last;
+            firstName.value = first;
+            secondName.value = second;
+            middleInitial.value = middle;
+            hiddenName.value = hasSecond
+                ? `${last} - ${first} - ${second} - ${middle}.`
+                : `${last} - ${first}`;
+        });
+    }
+});
+</script>
+{% endblock %}

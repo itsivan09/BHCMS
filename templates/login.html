@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0077b6">
+    <title>Barangay Patag Opol Heakth Center Management System</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/opol_logos.jpg') }}" type="image/jpeg">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Lora:wght@500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+    (function () {
+        var key = 'bhcms_theme';
+        var theme = null;
+        var legacy = null;
+        try {
+            theme = localStorage.getItem(key);
+            legacy = localStorage.getItem('theme');
+        } catch (e) {}
+
+        if (!theme && (legacy === 'dark' || legacy === 'light')) {
+            theme = legacy;
+            try {
+                localStorage.setItem(key, legacy);
+                localStorage.removeItem('theme');
+            } catch (e) {}
+        }
+
+        if (!theme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            theme = 'dark';
+        }
+
+        var applied = theme === 'dark' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', applied);
+        document.documentElement.setAttribute('data-bs-theme', applied);
+    })();
+    </script>
+<style>
+:root {
+    --g1: #b2ece6;
+    --g2: #5ec4ba;
+    --g3: #0f9e8e;
+    --g4: #077066;
+    --card-green:   #0a8577;
+    --card-dark:    #066057;
+    --accent:       #0fb8a5;
+    --accent-light: #5dd8cc;
+    --mint:         #edfaf8;
+    --mint-mid:     #c2ede9;
+    --white:        #ffffff;
+    --text-dark:    #053d38;
+    --text-body:    #1a5e57;
+    --text-muted:   #4a9490;
+    --border:       #8fd4ce;
+    --border-soft:  #caecea;
+    --red:          #dc2626;
+    --red-bg:       #fef2f2;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; }
+html { -webkit-font-smoothing: antialiased; }
+
+body {
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    min-height: 100dvh;
+    min-height: 100svh;
+    background:
+        linear-gradient(155deg, #17b6a7 0%, #0f9e8e 24%, #0a8577 52%, #076c63 78%, #044e47 100%);
+    background-size: 180% 180%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: clamp(18px, 4vh, 36px) clamp(12px, 3vw, 24px);
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+    animation: bg-flow 20s ease-in-out infinite;
+}
+
+[data-theme="dark"] {
+    --g1: #102028;
+    --g2: #14303a;
+    --g3: #1a3f4a;
+    --g4: #0f2a33;
+    --card-green:   #1b3f4a;
+    --card-dark:    #14303a;
+    --accent:       #2ecad6;
+    --accent-light: #66dde7;
+    --mint:         #172734;
+    --mint-mid:     #1f3445;
+    --white:        #1b2b3b;
+    --text-dark:    #e6eef5;
+    --text-body:    #cddbe6;
+    --text-muted:   #9cb3c3;
+    --border:       #2f465a;
+    --border-soft:  #273e51;
+    --red:          #f87171;
+    --red-bg:       #3b1f24;
+}
+
+[data-theme="dark"] body {
+    background: linear-gradient(155deg, #0f1c26 0%, #132430 24%, #152a36 52%, #12242f 78%, #0d1b24 100%);
+}
+@keyframes bg-flow {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* ══ BACKGROUND DESIGN ELEMENTS ══ */
+.bg-designs {
+    position: fixed; inset: 0; z-index: 0;
+    pointer-events: none; overflow: hidden;
+}
+
+/* Hexagon grid */
+.bg-hex-grid {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    opacity: 0.7;
+}
+
+/* Large glowing ambient circles */
+.bg-circle {
+    position: absolute; border-radius: 50%;
+}
+.bg-circle-1 {
+    width: clamp(280px, 50vw, 500px);
+    height: clamp(280px, 50vw, 500px);
+    top: -15%; left: -12%;
+    background: radial-gradient(circle, rgba(15,184,165,0.22) 0%, rgba(10,133,119,0.1) 50%, transparent 70%);
+    animation: circle-float 18s ease-in-out infinite;
+}
+.bg-circle-2 {
+    width: clamp(200px, 40vw, 420px);
+    height: clamp(200px, 40vw, 420px);
+    bottom: -10%; right: -10%;
+    background: radial-gradient(circle, rgba(93,216,204,0.2) 0%, rgba(7,112,102,0.1) 50%, transparent 70%);
+    animation: circle-float 22s ease-in-out infinite reverse;
+}
+.bg-circle-3 {
+    width: clamp(150px, 25vw, 300px);
+    height: clamp(150px, 25vw, 300px);
+    top: 40%; right: 5%;
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+    animation: circle-float 14s ease-in-out infinite 3s;
+}
+@keyframes circle-float {
+    0%,100% { transform: translate(0,0) scale(1); }
+    33%      { transform: translate(20px,-20px) scale(1.06); }
+    66%      { transform: translate(-15px,15px) scale(0.96); }
+}
+
+/* Crosses SVG overlay */
+.bg-crosses {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+}
+
+/* Wave decorations at bottom */
+.bg-wave {
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%; height: clamp(80px, 15vw, 160px);
+    animation: wave-drift 12s ease-in-out infinite;
+}
+.bg-wave-2 {
+    animation: wave-drift 16s ease-in-out infinite reverse;
+    opacity: 0.7;
+}
+@keyframes wave-drift {
+    0%,100% { transform: translateX(0); }
+    50%      { transform: translateX(-20px); }
+}
+
+/* DNA helix strands */
+.bg-dna {
+    position: absolute;
+    top: 10%; height: 80%;
+    width: 80px;
+    opacity: 0.6;
+    animation: dna-sway 10s ease-in-out infinite;
+}
+.bg-dna-left { left: 2%; }
+.bg-dna-right { right: 2%; animation-delay: -5s; }
+@keyframes dna-sway {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-12px); }
+}
+
+@media (max-width: 700px) {
+    .bg-dna { display: none; }
+    .bg-circle-3 { display: none; }
+}
+
+/* Soft radial light overlay */
+.bg-overlay {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+        radial-gradient(ellipse 56% 44% at 50% 22%, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.08) 30%, transparent 68%),
+        radial-gradient(ellipse 48% 36% at 15% 28%, rgba(255,255,255,0.13) 0%, transparent 62%),
+        radial-gradient(ellipse 45% 33% at 84% 76%, rgba(255,255,255,0.09) 0%, transparent 60%),
+        radial-gradient(ellipse 130% 92% at 50% 50%, transparent 48%, rgba(3,45,41,0.28) 100%);
+    mix-blend-mode: soft-light;
+    pointer-events: none;
+}
+
+/* ══════════════════════════════════
+   MAIN WRAPPER
+══════════════════════════════════ */
+.wrap {
+    position: relative; z-index: 1;
+    width: min(100%, 520px);
+    margin: auto 0;
+    animation: pop-in 0.7s cubic-bezier(0.22,1,0.36,1) both;
+    filter: drop-shadow(0 22px 48px rgba(3,57,52,0.26));
+}
+@keyframes pop-in {
+    from { opacity: 0; transform: translateY(32px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ══════════════════════════════════
+   HEADER PANEL
+══════════════════════════════════ */
+.hdr {
+    background: linear-gradient(180deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.2) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1.5px solid rgba(255,255,255,0.56);
+    border-bottom: none;
+    border-radius: 22px 22px 0 0;
+    padding: clamp(26px, 4vw, 38px) clamp(20px, 5vw, 36px) clamp(22px, 3.2vw, 30px);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+}
+
+/* Inner sheen sweep animation */
+.hdr::before {
+    content: '';
+    position: absolute; top: 0; left: -80%;
+    width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+    transform: skewX(-18deg);
+    animation: sheen 6s ease-in-out infinite 1.5s;
+}
+@keyframes sheen {
+    0%,100% { left: -80%; }
+    50%      { left: 120%; }
+}
+
+/* ── LOGO — large with glowing rings ── */
+.logo-wrap {
+    position: relative;
+    width: clamp(108px, 19vw, 140px); height: clamp(108px, 19vw, 140px);
+    margin: 0 auto clamp(14px, 2vw, 18px);
+    display: flex; align-items: center; justify-content: center;
+}
+
+/* Outermost slow-spinning dashed ring */
+.ring-spin {
+    position: absolute;
+    inset: -18px;
+    border-radius: 50%;
+    border: 2px dashed rgba(255,255,255,0.42);
+    animation: spin-slow 20s linear infinite;
+}
+@keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* Glowing pulse rings */
+.ring-glow-1 {
+    position: absolute;
+    inset: -10px;
+    border-radius: 50%;
+    border: 2.5px solid rgba(255,255,255,0.55);
+    animation: glow-pulse 2.8s ease-in-out infinite;
+    box-shadow: 0 0 18px rgba(15,184,165,0.6), 0 0 36px rgba(15,184,165,0.25);
+}
+.ring-glow-2 {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.75);
+    animation: glow-pulse 2.8s ease-in-out infinite 0.7s;
+    box-shadow: 0 0 12px rgba(255,255,255,0.4);
+}
+@keyframes glow-pulse {
+    0%,100% { opacity: 0.8; transform: scale(1); }
+    50%      { opacity: 1;   transform: scale(1.04); }
+}
+
+/* Logo circle itself */
+.logo-circle {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    position: relative; z-index: 2;
+    box-shadow:
+        0 0 0 5px rgba(255,255,255,0.62),
+        0 18px 52px rgba(1,45,41,0.24),
+        0 0 44px rgba(15,184,165,0.42);
+}
+.logo-circle img {
+    width: 88%; height: 88%;
+    object-fit: contain;
+}
+.logo-fallback {
+    display: none; align-items: center; justify-content: center;
+    font-size: 48px; color: var(--card-green);
+}
+
+/* Identity */
+.badge-label {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(255,255,255,0.28);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 100px;
+    padding: 5px 16px;
+    font-size: 0.68rem; font-weight: 800;
+    color: var(--white);
+    letter-spacing: 0.14em; text-transform: uppercase;
+    margin-bottom: 10px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.badge-label i { font-size: 10px; }
+
+.hdr-title {
+    font-family: 'Lora', serif;
+    font-size: clamp(1.42rem, 3.5vw, 2rem); font-weight: 600;
+    color: var(--white);
+    line-height: 1.2; margin: 0 auto 6px;
+    max-width: 24ch;
+    text-shadow: 0 3px 14px rgba(2,53,48,0.3);
+}
+.hdr-loc {
+    font-size: clamp(0.68rem, 1.7vw, 0.78rem); color: rgba(255,255,255,0.82);
+    font-weight: 600; letter-spacing: 0.05em; margin-bottom: 20px;
+}
+
+/* Service chips */
+.chips {
+    display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+}
+.chip {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.42);
+    border-radius: 100px;
+    padding: clamp(3px, 0.7vw, 5px) clamp(10px, 2vw, 12px);
+    font-size: clamp(0.62rem, 1.4vw, 0.69rem); font-weight: 700;
+    color: rgba(255,255,255,0.92);
+    letter-spacing: 0.04em; text-transform: uppercase;
+}
+.chip i { font-size: 9px; color: rgba(255,255,255,0.75); }
+.chip {
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+.chip:hover {
+    transform: translateY(-1px);
+    background: rgba(255,255,255,0.27);
+}
+
+/* ══════════════════════════════════
+   LOGIN CARD
+══════════════════════════════════ */
+.card {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fffe 100%);
+    border-radius: 0 0 22px 22px;
+    border: 1.5px solid rgba(255,255,255,0.6);
+    border-top: none;
+    box-shadow: 0 30px 80px rgba(6,96,87,0.36), 0 10px 28px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.75);
+    overflow: hidden;
+}
+
+/* Access strip */
+.strip {
+    background: linear-gradient(98deg, #0a8e80 0%, #0fb8a5 52%, #1ec9b8 100%);
+    padding: 12px clamp(18px, 5vw, 32px);
+    display: flex; align-items: center; gap: 10px;
+}
+.strip-icon {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: var(--white); flex-shrink: 0;
+}
+.strip-title { font-size: clamp(0.76rem, 1.8vw, 0.82rem); font-weight: 800; color: var(--white); }
+.strip-sub   { font-size: clamp(0.66rem, 1.5vw, 0.72rem); color: rgba(255,255,255,0.72); font-weight: 500; }
+
+/* Form body */
+.body {
+    padding: 28px clamp(18px, 5vw, 32px) 24px;
+}
+
+/* Flash */
+.flash {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 11px 14px;
+    background: var(--red-bg);
+    border-left: 3px solid var(--red);
+    border-radius: 6px;
+    font-size: 0.82rem; color: var(--red); font-weight: 600;
+    margin-bottom: 18px;
+    animation: flash-in 0.25s ease;
+}
+@keyframes flash-in { from{opacity:0;transform:translateX(-4px)} to{opacity:1;transform:translateX(0)} }
+
+/* Fields */
+.field { margin-bottom: 18px; }
+.field-label {
+    display: block;
+    font-size: 0.75rem; font-weight: 800;
+    color: var(--text-dark);
+    margin-bottom: 7px; letter-spacing: 0.05em; text-transform: uppercase;
+}
+.field-wrap { position: relative; }
+.field-input {
+    width: 100%; height: clamp(48px, 8vw, 52px);
+    padding: 0 48px 0 16px;
+    background: #f4fdfc;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.94rem; color: var(--text-dark); font-weight: 600;
+    outline: none; transition: all 0.2s;
+}
+.field-input::placeholder { color: var(--text-muted); font-weight: 400; }
+.field-input:hover { border-color: #7ec4a0; background: #ebfaf6; }
+.field-input:focus {
+    border-color: var(--accent);
+    background: var(--white);
+    box-shadow: 0 0 0 3px rgba(37,184,122,0.2), 0 8px 18px rgba(16,121,109,0.08);
+}
+.field-input.error {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px rgba(220,38,38,0.1);
+}
+.field-addon {
+    position: absolute; right: 0; top: 0; bottom: 0; width: 46px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); font-size: 14px;
+    border-left: 1px solid var(--border-soft);
+    pointer-events: none; transition: color 0.2s;
+}
+.field-wrap:focus-within .field-addon { color: var(--accent); }
+.pwd-btn {
+    position: absolute; right: 0; top: 0; bottom: 0; width: 46px;
+    background: none; border: none; border-left: 1px solid var(--border-soft);
+    border-radius: 0 10px 10px 0; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); font-size: 14px; transition: all 0.2s;
+}
+.pwd-btn:hover { color: var(--text-dark); background: var(--mint-mid); }
+
+.field-error {
+    display: none; align-items: center; gap: 5px;
+    font-size: 0.72rem; font-weight: 700; color: var(--red); margin-top: 5px;
+}
+.field-error.show { display: flex; }
+.field-error i { font-size: 10px; }
+
+/* Button */
+.btn {
+    width: 100%; height: clamp(50px, 8.5vw, 54px); margin-top: 6px;
+    background: linear-gradient(135deg, var(--accent-light) 0%, var(--card-green) 50%, var(--card-dark) 100%);
+    background-size: 160% 160%;
+    background-position: 0% 50%;
+    color: var(--white); border: none; border-radius: 12px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 1rem; font-weight: 800; letter-spacing: 0.05em;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 18px rgba(10,133,119,0.45), inset 0 1px 0 rgba(255,255,255,0.2);
+    position: relative; overflow: hidden;
+}
+.btn::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+}
+.btn:hover {
+    transform: translateY(-2px);
+    background-position: 100% 50%;
+    box-shadow: 0 10px 32px rgba(10,133,119,0.55);
+}
+.btn:active { transform: translateY(0); }
+.btn:disabled { opacity: 0.7; pointer-events: none; }
+
+/* Footer */
+.foot {
+    background: var(--mint);
+    border-top: 1px solid var(--border-soft);
+    padding: 16px clamp(18px, 5vw, 32px);
+    display: flex; gap: 10px; align-items: flex-start;
+}
+.foot-icon { color: var(--card-green); font-size: 12px; flex-shrink:0; margin-top:2px; }
+.foot-text { font-size: 0.71rem; color: var(--text-body); line-height: 1.6; font-weight: 500; }
+.foot-text strong { color: var(--text-dark); font-weight: 800; }
+
+/* ══════════════════════════════════
+   STATUS BAR
+══════════════════════════════════ */
+.sysbar {
+    margin-top: 20px;
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    flex-wrap: wrap;
+    row-gap: 8px;
+    animation: fade-in 0.6s ease both 0.5s;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+@keyframes fade-in { from{opacity:0} to{opacity:1} }
+.sysi {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+    color: rgba(255,255,255,0.78);
+}
+.sysi i { font-size: 9px; }
+.live-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: #86efac;
+    animation: lpulse 2s ease infinite;
+}
+@keyframes lpulse {
+    0%   { box-shadow: 0 0 0 0 rgba(134,239,172,0.7); }
+    70%  { box-shadow: 0 0 0 7px rgba(134,239,172,0); }
+    100% { box-shadow: 0 0 0 0 rgba(134,239,172,0); }
+}
+.live-txt { color: #86efac; }
+.sdiv { width: 1px; height: 14px; background: rgba(255,255,255,0.3); }
+
+/* ══════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════ */
+@media (max-width: 500px) {
+    body {
+        padding: 12px 10px 18px;
+    }
+    .wrap {
+        width: 100%;
+        filter: drop-shadow(0 14px 32px rgba(3,57,52,0.22));
+    }
+    .hdr { border-radius: 16px 16px 0 0; }
+    .card { border-radius: 0 0 16px 16px; }
+    .hdr-title { font-size: clamp(1.18rem, 7vw, 1.45rem); }
+    .hdr {
+        padding: 18px 14px 16px;
+    }
+    .body {
+        padding: 18px 14px 16px;
+    }
+    .foot {
+        padding: 12px 14px;
+    }
+    .chips {
+        gap: 4px;
+    }
+    .chips { gap: 5px; }
+    .sysbar {
+        border-radius: 14px;
+        margin-top: 12px;
+        padding: 8px 10px;
+    }
+    .sdiv { display: none; }
+}
+
+@media (max-width: 390px) {
+    .strip {
+        gap: 8px;
+        align-items: flex-start;
+    }
+    .strip-icon {
+        width: 26px; height: 26px; font-size: 12px;
+    }
+    .chip {
+        letter-spacing: 0.02em;
+    }
+    .sysbar {
+        flex-wrap: wrap;
+        row-gap: 8px;
+        column-gap: 12px;
+        justify-content: center;
+    }
+}
+
+@media (max-height: 820px) {
+    body {
+        justify-content: flex-start;
+        padding-top: 10px;
+        padding-bottom: 14px;
+    }
+    .wrap {
+        margin: 0;
+    }
+    .logo-wrap {
+        width: clamp(84px, 15vw, 108px);
+        height: clamp(84px, 15vw, 108px);
+        margin-bottom: 10px;
+    }
+    .hdr {
+        padding-top: 16px;
+        padding-bottom: 14px;
+    }
+    .hdr-loc {
+        margin-bottom: 12px;
+    }
+    .chips {
+        gap: 4px;
+    }
+    .body {
+        padding-top: 16px;
+        padding-bottom: 14px;
+    }
+    .field {
+        margin-bottom: 12px;
+    }
+    .sysbar {
+        margin-top: 10px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body,
+    .wrap,
+    .ring-spin,
+    .ring-glow-1,
+    .ring-glow-2,
+    .chip,
+    .btn,
+    .sysbar {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ FLOATING MEDICAL ICONS BACKGROUND ══ -->
+<div class="bg-overlay"></div>
+
+<!-- ══ BACKGROUND DESIGN ELEMENTS ══ -->
+<div class="bg-designs" aria-hidden="true">
+    <!-- Geometric hexagon grid -->
+    <svg class="bg-hex-grid" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <pattern id="hexPat" x="0" y="0" width="60" height="52" patternUnits="userSpaceOnUse">
+                <polygon points="30,0 60,15 60,37 30,52 0,37 0,15" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+            </pattern>
+        </defs>
+        <rect width="800" height="800" fill="url(#hexPat)"/>
+    </svg>
+
+    <!-- Large decorative circles -->
+    <div class="bg-circle bg-circle-1"></div>
+    <div class="bg-circle bg-circle-2"></div>
+    <div class="bg-circle bg-circle-3"></div>
+
+    <!-- Cross/plus decorations -->
+    <svg class="bg-crosses" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+        <!-- Large plus signs scattered around -->
+        <g fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="2" stroke-linecap="round">
+            <line x1="60" y1="45" x2="60" y2="85"/><line x1="40" y1="65" x2="80" y2="65"/>
+            <line x1="200" y1="680" x2="200" y2="730"/><line x1="175" y1="705" x2="225" y2="705"/>
+            <line x1="1100" y1="100" x2="1100" y2="150"/><line x1="1075" y1="125" x2="1125" y2="125"/>
+            <line x1="1050" y1="650" x2="1050" y2="700"/><line x1="1025" y1="675" x2="1075" y2="675"/>
+            <line x1="350" y1="750" x2="350" y2="790"/><line x1="330" y1="770" x2="370" y2="770"/>
+            <line x1="900" y1="50" x2="900" y2="90"/><line x1="880" y1="70" x2="920" y2="70"/>
+        </g>
+        <!-- Small dots -->
+        <g fill="rgba(255,255,255,0.15)">
+            <circle cx="120" cy="200" r="3"/><circle cx="135" cy="215" r="2"/><circle cx="110" cy="215" r="2"/>
+            <circle cx="1080" cy="400" r="3"/><circle cx="1095" cy="415" r="2"/><circle cx="1065" cy="415" r="2"/>
+            <circle cx="400" cy="30" r="3"/><circle cx="415" cy="45" r="2"/><circle cx="385" cy="45" r="2"/>
+            <circle cx="700" cy="760" r="3"/><circle cx="715" cy="775" r="2"/><circle cx="685" cy="775" r="2"/>
+        </g>
+        <!-- Diagonal lines -->
+        <g stroke="rgba(255,255,255,0.06)" stroke-width="1">
+            <line x1="0" y1="0" x2="200" y2="200"/>
+            <line x1="0" y1="100" x2="200" y2="300"/>
+            <line x1="1200" y1="0" x2="1000" y2="200"/>
+            <line x1="1200" y1="100" x2="1000" y2="300"/>
+            <line x1="0" y1="600" x2="200" y2="800"/>
+            <line x1="1200" y1="600" x2="1000" y2="800"/>
+        </g>
+    </svg>
+
+    <!-- Wavy bottom decoration -->
+    <svg class="bg-wave" viewBox="0 0 1440 320" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <path d="M0,160L48,170.7C96,181,192,203,288,197.3C384,192,480,160,576,160C672,160,768,192,864,197.3C960,203,1056,181,1152,165.3C1248,149,1344,139,1392,133.3L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" fill="rgba(4,78,71,0.4)"/>
+    </svg>
+    <svg class="bg-wave bg-wave-2" viewBox="0 0 1440 320" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <path d="M0,224L60,213.3C120,203,240,181,360,181.3C480,181,600,203,720,208C840,213,960,203,1080,186.7C1200,171,1320,149,1380,138.7L1440,128L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z" fill="rgba(7,112,102,0.3)"/>
+    </svg>
+
+    <!-- DNA helix / strands on sides -->
+    <svg class="bg-dna bg-dna-left" viewBox="0 0 80 600" xmlns="http://www.w3.org/2000/svg">
+        <g stroke="rgba(255,255,255,0.12)" stroke-width="1.5" fill="none">
+            <path d="M10,0 Q50,30 10,60 Q-30,90 10,120 Q50,150 10,180 Q-30,210 10,240 Q50,270 10,300 Q-30,330 10,360 Q50,390 10,420 Q-30,450 10,480 Q50,510 10,540 Q-30,570 10,600"/>
+            <path d="M70,0 Q30,30 70,60 Q110,90 70,120 Q30,150 70,180 Q110,210 70,240 Q30,270 70,300 Q110,330 70,360 Q30,390 70,420 Q110,450 70,480 Q30,510 70,540 Q110,570 70,600"/>
+        </g>
+        <g fill="rgba(255,255,255,0.15)">
+            <circle cx="10" cy="30" r="3"/><circle cx="70" cy="30" r="3"/>
+            <circle cx="10" cy="90" r="3"/><circle cx="70" cy="90" r="3"/>
+            <circle cx="10" cy="150" r="3"/><circle cx="70" cy="150" r="3"/>
+            <circle cx="10" cy="210" r="3"/><circle cx="70" cy="210" r="3"/>
+            <circle cx="10" cy="270" r="3"/><circle cx="70" cy="270" r="3"/>
+            <circle cx="10" cy="330" r="3"/><circle cx="70" cy="330" r="3"/>
+            <circle cx="10" cy="390" r="3"/><circle cx="70" cy="390" r="3"/>
+            <circle cx="10" cy="450" r="3"/><circle cx="70" cy="450" r="3"/>
+            <circle cx="10" cy="510" r="3"/><circle cx="70" cy="510" r="3"/>
+        </g>
+        <g stroke="rgba(255,255,255,0.08)" stroke-width="1">
+            <line x1="10" y1="30" x2="70" y2="30"/>
+            <line x1="10" y1="90" x2="70" y2="90"/>
+            <line x1="10" y1="150" x2="70" y2="150"/>
+            <line x1="10" y1="210" x2="70" y2="210"/>
+            <line x1="10" y1="270" x2="70" y2="270"/>
+            <line x1="10" y1="330" x2="70" y2="330"/>
+            <line x1="10" y1="390" x2="70" y2="390"/>
+            <line x1="10" y1="450" x2="70" y2="450"/>
+            <line x1="10" y1="510" x2="70" y2="510"/>
+        </g>
+    </svg>
+    <svg class="bg-dna bg-dna-right" viewBox="0 0 80 600" xmlns="http://www.w3.org/2000/svg">
+        <g stroke="rgba(255,255,255,0.12)" stroke-width="1.5" fill="none">
+            <path d="M10,0 Q50,30 10,60 Q-30,90 10,120 Q50,150 10,180 Q-30,210 10,240 Q50,270 10,300 Q-30,330 10,360 Q50,390 10,420 Q-30,450 10,480 Q50,510 10,540 Q-30,570 10,600"/>
+            <path d="M70,0 Q30,30 70,60 Q110,90 70,120 Q30,150 70,180 Q110,210 70,240 Q30,270 70,300 Q110,330 70,360 Q30,390 70,420 Q110,450 70,480 Q30,510 70,540 Q110,570 70,600"/>
+        </g>
+        <g fill="rgba(255,255,255,0.15)">
+            <circle cx="10" cy="30" r="3"/><circle cx="70" cy="30" r="3"/>
+            <circle cx="10" cy="90" r="3"/><circle cx="70" cy="90" r="3"/>
+            <circle cx="10" cy="150" r="3"/><circle cx="70" cy="150" r="3"/>
+            <circle cx="10" cy="210" r="3"/><circle cx="70" cy="210" r="3"/>
+            <circle cx="10" cy="270" r="3"/><circle cx="70" cy="270" r="3"/>
+            <circle cx="10" cy="330" r="3"/><circle cx="70" cy="330" r="3"/>
+            <circle cx="10" cy="390" r="3"/><circle cx="70" cy="390" r="3"/>
+            <circle cx="10" cy="450" r="3"/><circle cx="70" cy="450" r="3"/>
+            <circle cx="10" cy="510" r="3"/><circle cx="70" cy="510" r="3"/>
+        </g>
+        <g stroke="rgba(255,255,255,0.08)" stroke-width="1">
+            <line x1="10" y1="30" x2="70" y2="30"/>
+            <line x1="10" y1="90" x2="70" y2="90"/>
+            <line x1="10" y1="150" x2="70" y2="150"/>
+            <line x1="10" y1="210" x2="70" y2="210"/>
+            <line x1="10" y1="270" x2="70" y2="270"/>
+            <line x1="10" y1="330" x2="70" y2="330"/>
+            <line x1="10" y1="390" x2="70" y2="390"/>
+            <line x1="10" y1="450" x2="70" y2="450"/>
+            <line x1="10" y1="510" x2="70" y2="510"/>
+        </g>
+    </svg>
+</div>
+
+<div id="med-icons-bg"></div>
+
+<style>
+#med-icons-bg {
+    position: fixed; inset: 0; z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+.med-icon {
+    position: absolute;
+    color: rgba(255,255,255,0.55);
+    animation: med-float linear infinite;
+    will-change: transform, opacity;
+    text-shadow: 0 0 18px rgba(255,255,255,0.25);
+}
+@keyframes med-float {
+    0%   { transform: translateY(0px) rotate(0deg);   opacity: 0;    }
+    8%   { opacity: 1; }
+    92%  { opacity: 1; }
+    100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+}
+
+@media (max-width: 500px) {
+    .med-icon { color: rgba(255,255,255,0.45); }
+}
+</style>
+
+<script>
+(function () {
+    const icons = [
+        'fa-stethoscope','fa-heart-pulse','fa-pills','fa-syringe',
+        'fa-cross','fa-notes-medical','fa-heartbeat','fa-baby',
+        'fa-file-medical','fa-hospital','fa-user-doctor','fa-capsules',
+        'fa-thermometer','fa-tooth','fa-lungs','fa-dna',
+        'fa-microscope','fa-kit-medical','fa-hand-holding-medical','fa-plus'
+    ];
+    const container = document.getElementById('med-icons-bg');
+    const screenW = window.innerWidth || document.documentElement.clientWidth;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const count = reduceMotion ? 10 : (screenW <= 500 ? 18 : (screenW <= 1024 ? 30 : 42));
+    const minOpacity = screenW <= 500 ? 0.28 : 0.32;
+    const maxOpacity = screenW <= 500 ? 0.52 : 0.62;
+
+    for (let i = 0; i < count; i++) {
+        const el = document.createElement('i');
+        const icon = icons[Math.floor(Math.random() * icons.length)];
+        el.className = `fas ${icon} med-icon`;
+
+        const size  = 22 + Math.random() * (screenW <= 500 ? 42 : 62);
+        const left  = Math.random() * 100;               // % across screen
+        const delay = Math.random() * 20;                // stagger start
+        const dur   = (reduceMotion ? 28 : 16) + Math.random() * (reduceMotion ? 12 : 18);
+        const startY = Math.random() * 100;              // start anywhere on screen
+        const opacity = minOpacity + Math.random() * (maxOpacity - minOpacity);
+
+        el.style.cssText = `
+            font-size: ${size}px;
+            left: ${left}%;
+            top: ${startY}vh;
+            animation-duration: ${dur}s;
+            animation-delay: -${delay}s;
+            opacity: ${opacity.toFixed(2)};
+        `;
+        container.appendChild(el);
+    }
+})();
+</script>
+
+<!-- ══ MAIN CONTENT ══ -->
+<div class="wrap">
+
+    <!-- Header -->
+    <div class="hdr">
+
+        <!-- Large glowing logo -->
+        <div class="logo-wrap">
+            <div class="ring-spin"></div>
+            <div class="ring-glow-1"></div>
+            <div class="ring-glow-2"></div>
+            <div class="logo-circle">
+                 <img src="{{ url_for('static', filename='images/opol_logos.jpg') }}"
+                     alt="Opol Barangay Health Center Logo"
+                     onerror="this.style.display='none'; this.parentElement.querySelector('.logo-fallback').style.display='flex';">
+                <div class="logo-fallback">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="badge-label"><i class="fas fa-house-medical"></i> Barangay Health Center</div>
+        <div class="hdr-title">Barangay Patag Opol Health Center Management System</div>
+        <div class="hdr-loc">Opol &nbsp;·&nbsp; Misamis Oriental &nbsp;·&nbsp; Region X</div>
+
+        <div class="chips">
+            <span class="chip"><i class="fas fa-user-injured"></i> Patient Care</span>
+            <span class="chip"><i class="fas fa-syringe"></i> Immunization</span>
+            <span class="chip"><i class="fas fa-baby"></i> Maternal Health</span>
+            <span class="chip"><i class="fas fa-pills"></i> Pharmacy</span>
+            <span class="chip"><i class="fas fa-chart-line"></i> Morbidity</span>
+        </div>
+    </div>
+
+    <!-- Card -->
+    <div class="card">
+
+        <div class="strip">
+            <div class="strip-icon"><i class="fas fa-shield-halved"></i></div>
+            <div>
+                <div class="strip-title">Authorized Staff Access Only</div>
+                <div class="strip-sub">Barangay Patag Opol Health Center Management System</div>
+            </div>
+        </div>
+
+        <div class="body">
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="flash">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" novalidate id="loginForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="field">
+                    <label class="field-label" for="username">Username</label>
+                    <div class="field-wrap">
+                        <input type="text" id="username" name="username" class="field-input"
+                               placeholder="Enter your username"
+                               autocomplete="username" required minlength="3">
+                        <div class="field-addon"><i class="fas fa-user"></i></div>
+                    </div>
+                    <div class="field-error" id="usernameError">
+                        <i class="fas fa-circle-exclamation"></i> A valid username is required
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="field-label" for="password">Password</label>
+                    <div class="field-wrap">
+                        <input type="password" id="password" name="password" class="field-input"
+                               placeholder="Enter your password"
+                               autocomplete="current-password" required minlength="6">
+                        <button type="button" class="pwd-btn" id="pwToggle" tabindex="-1">
+                            <i class="fas fa-eye" id="pwIcon"></i>
+                        </button>
+                    </div>
+                    <div class="field-error" id="passwordError">
+                        <i class="fas fa-circle-exclamation"></i> Password is required
+                    </div>
+                </div>
+
+                <button type="submit" class="btn" id="loginBtn">
+                    <i class="fas fa-right-to-bracket"></i>
+                    Sign In to System
+                </button>
+            </form>
+        </div>
+
+        <div class="foot">
+            <i class="fas fa-circle-info foot-icon"></i>
+            <p class="foot-text">
+                <strong>Restricted Access.</strong> For authorized Barangay Health Workers only.
+                Protected under the <strong>Data Privacy Act of 2012 (R.A. 10173)</strong>.
+                All activity is logged and monitored.
+            </p>
+        </div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="sysbar">
+        <div class="sysi">
+            <span class="live-dot"></span>
+            <span class="live-txt">System Online</span>
+        </div>
+        <div class="sdiv"></div>
+        <div class="sysi"><i class="fas fa-certificate"></i> DOH Accredited</div>
+        <div class="sdiv"></div>
+        <div class="sysi"><i class="fas fa-lock"></i> Secured</div>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form   = document.getElementById('loginForm');
+    const uIn    = document.getElementById('username');
+    const pIn    = document.getElementById('password');
+    const uErr   = document.getElementById('usernameError');
+    const pErr   = document.getElementById('passwordError');
+    const eye    = document.getElementById('pwToggle');
+    const eyeIco = document.getElementById('pwIcon');
+    const btn    = document.getElementById('loginBtn');
+
+    eye.addEventListener('click', function () {
+        const v = pIn.type === 'password';
+        pIn.type = v ? 'text' : 'password';
+        eyeIco.className = v ? 'fas fa-eye-slash' : 'fas fa-eye';
+    });
+    uIn.addEventListener('input', function () {
+        if (this.value.trim().length >= 3) { this.classList.remove('error'); uErr.classList.remove('show'); }
+    });
+    pIn.addEventListener('input', function () {
+        if (this.value.length >= 6) { this.classList.remove('error'); pErr.classList.remove('show'); }
+    });
+    form.addEventListener('submit', function (e) {
+        let ok = true;
+        if (uIn.value.trim().length < 3) { uIn.classList.add('error'); uErr.classList.add('show'); ok = false; }
+        if (pIn.value.length < 6) { pIn.classList.add('error'); pErr.classList.add('show'); ok = false; }
+        if (!ok) { e.preventDefault(); return; }
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+        btn.disabled = true;
+    });
+});
+</script>
+<script>
+(function () {
+    var htmlEl = document.documentElement;
+    var key = 'bhcms_theme';
+
+    function updateMetaTheme(theme) {
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (!meta) return;
+        meta.setAttribute('content', theme === 'dark' ? '#0e1a24' : '#0077b6');
+    }
+
+    var current = htmlEl.getAttribute('data-theme') || 'light';
+    updateMetaTheme(current);
+
+    if (window.matchMedia) {
+        var media = window.matchMedia('(prefers-color-scheme: dark)');
+        var onChange = function (e) {
+            var hasSaved = false;
+            try {
+                hasSaved = !!localStorage.getItem(key);
+            } catch (err) {}
+            if (hasSaved) return;
+            var autoTheme = e.matches ? 'dark' : 'light';
+            htmlEl.setAttribute('data-theme', autoTheme);
+            htmlEl.setAttribute('data-bs-theme', autoTheme);
+            updateMetaTheme(autoTheme);
+        };
+        if (typeof media.addEventListener === 'function') media.addEventListener('change', onChange);
+        else if (typeof media.addListener === 'function') media.addListener(onChange);
+    }
+
+    window.addEventListener('storage', function (event) {
+        if (event.key === key && (event.newValue === 'dark' || event.newValue === 'light')) {
+            htmlEl.setAttribute('data-theme', event.newValue);
+            htmlEl.setAttribute('data-bs-theme', event.newValue);
+            updateMetaTheme(event.newValue);
+        }
+    });
+})();
+</script>
+</body>
+</html>

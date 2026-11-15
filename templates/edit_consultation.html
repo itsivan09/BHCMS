@@ -1,0 +1,313 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  {% if '[Pending Midwife Review]' in consultation.diagnosis %}
+    Review Consultation - {{ patient.full_name }}
+  {% else %}
+    Edit Consultation - {{ patient.full_name }}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+{% set is_pending = '[Pending Midwife Review]' in consultation.diagnosis %}
+{% set clean_observation = consultation.diagnosis | replace('[Pending Midwife Review] ', '') | replace('[Pending Midwife Review]', '') | trim %}
+
+<div class="container" style="max-width: 900px;">
+
+  <!-- Header -->
+  <div style="margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 6px;">
+      <h1 style="margin: 0;">
+        {% if is_pending %}
+          <i class="fas fa-clipboard-check" style="color: #ffc107; margin-right: 8px;"></i>Review Consultation
+        {% else %}
+          <i class="fas fa-edit" style="color: var(--primary); margin-right: 8px;"></i>Edit Consultation
+        {% endif %}
+      </h1>
+    </div>
+    <p style="color: #666; font-size: 14px; margin: 0;">
+      Patient: <strong>{{ patient.full_name }}</strong>
+      <span style="color:#ccc; margin: 0 6px;">|</span>
+      {{ consultation.date.strftime('%B %d, %Y at %I:%M %p') }}
+      <span style="color:#ccc; margin: 0 6px;">|</span>
+      Recorded by: <strong>{{ consultation.health_worker.full_name if consultation.health_worker else 'N/A' }}</strong>
+    </p>
+  </div>
+
+  <!-- Pending Review Banner -->
+  {% if is_pending %}
+  <div style="background: linear-gradient(135deg, #fff8e1, #fff3cd); border-left: 4px solid #ffc107; border-radius: 10px; padding: 14px 18px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 12px;">
+    <i class="fas fa-info-circle" style="color: #ffc107; font-size: 22px; margin-top: 2px; flex-shrink: 0;"></i>
+    <div>
+      <p style="margin: 0; font-weight: 700; color: #7d5a00; font-size: 14px;">⏳ This consultation is awaiting your review</p>
+      <p style="margin: 4px 0 0; font-size: 13px; color: #7d5a00;">
+        Recorded by a BHW. Please complete the <strong>official diagnosis</strong> and add medicines if needed.
+        {% if clean_observation %}
+          BHW's preliminary observation: <em>"{{ clean_observation }}"</em>
+        {% endif %}
+      </p>
+    </div>
+  </div>
+  {% endif %}
+
+  <form method="POST">
+
+    <!-- Consultation Type -->
+    <div class="form-group" style="margin-bottom: 18px;">
+      <label class="form-label" style="font-weight: 600; font-size: 14px; display: block; margin-bottom: 6px;">Consultation Type</label>
+      <select name="consultation_type" class="form-control" style="padding: 10px 14px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; width: 100%;">
+        {% for t in ['General', 'Prenatal', 'Immunization', 'Child Health', 'Family Planning', 'Emergency', 'Follow-up', 'Monitoring'] %}
+          <option value="{{ t }}" {{ 'selected' if consultation.consultation_type == t else '' }}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Chief Complaint -->
+    <div class="form-group" style="margin-bottom: 18px;">
+      <label class="form-label" style="font-weight: 600; font-size: 14px; display: block; margin-bottom: 6px;">
+        Chief Complaint <span style="color: #e74c3c;">*</span>
+      </label>
+      <textarea name="chief_complaint" class="form-control" rows="3" required
+                style="padding: 10px 14px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; resize: vertical;">{{ consultation.chief_complaint }}</textarea>
+    </div>
+
+    <!-- Vital Signs -->
+    <div style="background: linear-gradient(135deg, rgba(0, 180, 216, 0.05), rgba(114, 9, 183, 0.05)); padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid var(--primary);">
+      <h4 style="font-size: 15px; font-weight: 700; color: var(--primary); margin: 0 0 16px;">
+        <i class="fas fa-heartbeat" style="margin-right: 6px;"></i>Vital Signs
+      </h4>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
+        <div>
+          <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 5px;">Temperature (°C)</label>
+          <input type="number" name="temperature" step="0.1" min="35" max="42" class="form-control"
+                 value="{{ consultation.temperature or '' }}" placeholder="36.5"
+                 style="padding: 10px 14px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 5px;">BP Systolic (mmHg)</label>
+          <input type="number" name="blood_pressure_systolic" min="50" max="250" class="form-control"
+                 value="{{ consultation.blood_pressure_systolic or '' }}" placeholder="120"
+                 style="padding: 10px 14px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 5px;">BP Diastolic (mmHg)</label>
+          <input type="number" name="blood_pressure_diastolic" min="30" max="130" class="form-control"
+                 value="{{ consultation.blood_pressure_diastolic or '' }}" placeholder="80"
+                 style="padding: 10px 14px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 5px;">Weight (kg)</label>
+          <input type="number" name="weight" step="0.1" min="2" max="300" class="form-control"
+                 value="{{ consultation.weight or '' }}" placeholder="60"
+                 style="padding: 10px 14px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 5px;">Height (cm)</label>
+          <input type="number" name="height" step="0.1" min="50" max="250" class="form-control"
+                 value="{{ consultation.height or '' }}" placeholder="160"
+                 style="padding: 10px 14px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 5px;">Respiratory Rate (br/min)</label>
+          <input type="number" name="respiratory_rate" min="8" max="40" class="form-control"
+                 value="{{ consultation.respiratory_rate or '' }}" placeholder="16"
+                 style="padding: 10px 14px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box;">
+        </div>
+      </div>
+    </div>
+
+    <!-- Diagnosis -->
+    <div class="form-group" style="margin-bottom: 18px;">
+      <label class="form-label" style="font-weight: 600; font-size: 14px; display: block; margin-bottom: 6px;">
+        Official Diagnosis <span style="color: #e74c3c;">*</span>
+      </label>
+      <textarea name="diagnosis" class="form-control" rows="3" required
+                style="padding: 10px 14px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; resize: vertical;"
+                placeholder="e.g., Acute Upper Respiratory Tract Infection">{{ clean_observation if is_pending else consultation.diagnosis }}</textarea>
+      {% if is_pending %}
+        <small style="display: block; margin-top: 5px; color: #7d5a00; font-size: 13px;">
+          <i class="fas fa-info-circle"></i> Enter the official diagnosis. This will replace the pending status.
+        </small>
+      {% endif %}
+    </div>
+
+    <!-- Notes -->
+    <div class="form-group" style="margin-bottom: 24px;">
+      <label class="form-label" style="font-weight: 600; font-size: 14px; display: block; margin-bottom: 6px;">Additional Notes</label>
+      <textarea name="notes" class="form-control" rows="2"
+                style="padding: 10px 14px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; resize: vertical;"
+                placeholder="Any additional observations or recommendations">{{ consultation.notes or '' }}</textarea>
+    </div>
+
+    <!-- Existing Medicines -->
+    {% if consultation.dispensed_medicines %}
+    <div style="background: #f0fff8; border: 1px solid #b2dfdb; border-radius: 12px; padding: 18px 20px; margin-bottom: 24px;">
+      <h4 style="font-size: 15px; font-weight: 700; color: #00b894; margin: 0 0 14px;">
+        <i class="fas fa-pills" style="margin-right: 6px;"></i>Existing Dispensed Medicines
+      </h4>
+      <div style="display: grid; gap: 10px;">
+        {% for dm in consultation.dispensed_medicines %}
+          <div style="background: white; border: 1px solid #b2dfdb; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <p style="font-weight: 700; margin: 0 0 3px; color: #1a6b5a;">{{ dm.inventory_item.name }}</p>
+              <p style="font-size: 13px; color: #555; margin: 0;">
+                {{ dm.quantity_dispensed }} {{ dm.inventory_item.unit }}
+                {% if dm.dosage %} · {{ dm.dosage }}{% endif %}
+                {% if dm.route %} · {{ dm.route }}{% endif %}
+                {% if dm.frequency %} · {{ dm.frequency }}{% endif %}
+                {% if dm.duration %} · {{ dm.duration }}{% endif %}
+              </p>
+              {% if dm.instructions %}
+                <p style="font-size: 12px; color: #777; margin: 3px 0 0;">Instructions: {{ dm.instructions }}</p>
+              {% endif %}
+              {% if dm.warnings %}
+                <p style="font-size: 12px; color: #c0392b; margin: 2px 0 0;"><i class="fas fa-exclamation-triangle"></i> {{ dm.warnings }}</p>
+              {% endif %}
+            </div>
+            <form method="POST" action="{{ url_for('consultations.remove_dispensed_medicine', consultation_id=consultation.id, dm_id=dm.id) }}"
+                  onsubmit="return confirm('Remove {{ dm.inventory_item.name }} and restore {{ dm.quantity_dispensed }} {{ dm.inventory_item.unit }} to inventory?');"
+                  style="margin: 0;">
+              <button type="submit" style="background: #e74c3c; color: white; border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;">
+                <i class="fas fa-times"></i> Remove
+              </button>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Add New Medicines -->
+    {% if medicines %}
+    <div style="background: linear-gradient(135deg, rgba(6, 214, 160, 0.05), rgba(6, 214, 160, 0.02)); padding: 20px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid var(--success);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h4 style="font-size: 15px; font-weight: 700; color: var(--success); margin: 0;">
+          <i class="fas fa-plus-circle" style="margin-right: 6px;"></i>Add New Medicines
+        </h4>
+        <button type="button" onclick="addMedicine()" class="btn btn-sm"
+                style="background: var(--success); color: white; padding: 5px 14px; font-size: 13px;">
+          <i class="fas fa-plus"></i> Add Medicine
+        </button>
+      </div>
+      <div id="medicines-container"></div>
+      <p id="no-medicines-msg" style="color: #aaa; font-size: 13px; margin: 0; text-align: center;">
+        Click "Add Medicine" to dispense additional medicines for this consultation.
+      </p>
+    </div>
+    {% endif %}
+
+    <!-- Buttons -->
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; padding-top: 8px;">
+      <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 600;">
+        <i class="fas fa-save"></i>
+        {% if is_pending %}Complete Review{% else %}Save Changes{% endif %}
+      </button>
+      <a href="{{ url_for('consultations.consultation_history', patient_id=patient.id) }}" class="btn btn-secondary" style="padding: 10px 24px;">
+        <i class="fas fa-times"></i> Cancel
+      </a>
+    </div>
+
+  </form>
+</div>
+
+<script>
+const medicines = JSON.parse('{{ medicines | tojson | safe }}');
+let medicineCount = 0;
+
+function addMedicine() {
+  document.getElementById('no-medicines-msg').style.display = 'none';
+  medicineCount++;
+  const opts = medicines.map(m =>
+    `<option value="${m.id}" data-available="${m.quantity}" data-unit="${m.unit}">
+      ${m.name} (Available: ${m.quantity} ${m.unit})
+    </option>`
+  ).join('');
+
+  const html = `
+    <div class="medicine-item" style="background: white; padding: 16px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #ddd;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 10px;">
+        <div>
+          <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Medicine *</label>
+          <select name="medicine_id[]" class="form-control" required
+                  style="padding: 9px 12px; border: 2px solid #ddd; border-radius: 8px; width: 100%; font-size: 13px;">
+            <option value="">-- Select --</option>${opts}
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Quantity *</label>
+          <input type="number" name="medicine_quantity[]" min="1" placeholder="1" required
+                 style="padding: 9px 12px; border: 2px solid #ddd; border-radius: 8px; width: 100%; box-sizing: border-box; font-size: 13px;">
+        </div>
+        <div>
+          <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Dosage *</label>
+          <input type="text" name="medicine_dosage[]" placeholder="e.g., 500mg" required
+                 style="padding: 9px 12px; border: 2px solid #ddd; border-radius: 8px; width: 100%; box-sizing: border-box; font-size: 13px;">
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 10px;">
+        <div>
+          <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Route *</label>
+          <select name="medicine_route[]" required
+                  style="padding: 9px 12px; border: 2px solid #ddd; border-radius: 8px; width: 100%; font-size: 13px;">
+            <option value="">-- Select --</option>
+            <option value="Oral">Oral</option>
+            <option value="Injection">Injection</option>
+            <option value="Topical">Topical</option>
+            <option value="Inhalation">Inhalation</option>
+            <option value="Rectal">Rectal</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Frequency *</label>
+          <select name="medicine_frequency[]" required
+                  style="padding: 9px 12px; border: 2px solid #ddd; border-radius: 8px; width: 100%; font-size: 13px;">
+            <option value="">-- Select --</option>
+            <option value="Once daily">Once daily</option>
+            <option value="Twice daily">Twice daily</option>
+            <option value="Three times daily">Three times daily</option>
+            <option value="Every 6 hours">Every 6 hours</option>
+            <option value="Every 8 hours">Every 8 hours</option>
+            <option value="As needed">As needed</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Duration *</label>
+          <input type="text" name="medicine_duration[]" placeholder="e.g., 7 days" required
+                 style="padding: 9px 12px; border: 2px solid #ddd; border-radius: 8px; width: 100%; box-sizing: border-box; font-size: 13px;">
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 10px;">
+        <div>
+          <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Special Instructions</label>
+          <input type="text" name="medicine_instruction[]" placeholder="e.g., Take with food"
+                 style="padding: 9px 12px; border: 2px solid #ddd; border-radius: 8px; width: 100%; box-sizing: border-box; font-size: 13px;">
+        </div>
+        <div>
+          <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Warnings</label>
+          <input type="text" name="medicine_warnings[]" placeholder="e.g., May cause drowsiness"
+                 style="padding: 9px 12px; border: 2px solid #ddd; border-radius: 8px; width: 100%; box-sizing: border-box; font-size: 13px;">
+        </div>
+      </div>
+      <div style="text-align: right; border-top: 1px solid #eee; padding-top: 10px;">
+        <button type="button" onclick="this.closest('.medicine-item').remove(); checkNoMeds();"
+                style="background: #e74c3c; color: white; border: none; padding: 5px 14px; border-radius: 6px; font-size: 13px; cursor: pointer;">
+          <i class="fas fa-trash"></i> Remove
+        </button>
+      </div>
+    </div>`;
+  document.getElementById('medicines-container').insertAdjacentHTML('beforeend', html);
+}
+
+function checkNoMeds() {
+  const container = document.getElementById('medicines-container');
+  const msg = document.getElementById('no-medicines-msg');
+  if (container && msg) {
+    msg.style.display = container.children.length === 0 ? 'block' : 'none';
+  }
+}
+</script>
+
+<style>
+  .form-control:focus { outline: none; border-color: var(--primary) !important; box-shadow: 0 0 0 3px rgba(0,180,216,0.1); }
+</style>
+{% endblock %}

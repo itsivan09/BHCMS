@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h2><i class="fas fa-chart-bar me-2"></i>Health Reports & Analytics</h2>
+        <p class="dashboard-subtitle">Morbidity and demographic analysis</p>
+    </div>
+
+    <!-- Reports Navigation -->
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#morbidity">Morbidity Analysis</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#demographics">Demographics</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#export">Export Reports</a>
+        </li>
+    </ul>
+
+    <!-- Morbidity Tab -->
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="morbidity">
+            <div class="stat-card">
+                <div class="card-header-custom">
+                    <h3>Top 10 Diagnoses (Last 30 Days)</h3>
+                    <p class="text-muted">Disease frequency analysis</p>
+                </div>
+                <div class="card-body">
+                    <canvas id="morbidityChart" style="max-height: 400px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demographics Tab -->
+        <div class="tab-pane fade" id="demographics">
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="stat-card">
+                        <div class="card-header-custom">
+                            <h3>Age Distribution</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="ageChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="stat-card">
+                        <div class="card-header-custom">
+                            <h3>Gender Distribution</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="genderChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="card-header-custom">
+                    <h3>Purok Distribution</h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="purokChart" style="max-height: 400px;"></canvas>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="alert alert-info">
+                        <strong id="totalPatients">0</strong> Total Patients
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="alert alert-warning">
+                        <strong id="pregnantPatients">0</strong> Pregnant Patients
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="alert alert-success">
+                        <strong id="totalDiagnoses">0</strong> Unique Diagnoses
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Tab -->
+        <div class="tab-pane fade" id="export">
+            <div class="stat-card">
+                <div class="card-header-custom">
+                    <h3><i class="fas fa-download me-2"></i>Export Data</h3>
+                </div>
+                <div class="card-body">
+                    <h5 class="mb-3">Patient Records</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <a href="{{ url_for('reports.export_patients_csv') }}" class="btn btn-primary btn-sm w-100 mb-2">
+                                <i class="fas fa-file-csv me-1"></i>Export Patients as CSV
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{{ url_for('reports.export_patients_xlsx') }}" class="btn btn-primary btn-sm w-100 mb-2">
+                                <i class="fas fa-file-excel me-1"></i>Export Patients as Excel
+                            </a>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3">Inventory Records</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <a href="{{ url_for('reports.export_inventory_csv') }}" class="btn btn-success btn-sm w-100 mb-2">
+                                <i class="fas fa-file-csv me-1"></i>Export Inventory as CSV
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{{ url_for('reports.export_inventory_xlsx') }}" class="btn btn-success btn-sm w-100 mb-2">
+                                <i class="fas fa-file-excel me-1"></i>Export Inventory as Excel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load morbidity stats
+async function loadMorbidityStats() {
+    try {
+        const response = await fetch('/api/morbidity-stats');
+        const data = await response.json();
+        
+        if (data.error) {
+            console.error('Error:', data.error);
+            return;
+        }
+        
+        const ctx = document.getElementById('morbidityChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: data.datasets
+            },
+            options: {
+                responsive: true,
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        document.getElementById('totalDiagnoses').textContent = data.total_unique_diagnoses;
+    } catch (error) {
+        console.error('Error loading morbidity stats:', error);
+    }
+}
+
+// Load demographic stats
+async function loadDemographicStats() {
+    try {
+        const response = await fetch('/api/demographic-report');
+        const data = await response.json();
+        
+        if (data.error) {
+            console.error('Error:', data.error);
+            return;
+        }
+        
+        // Age distribution
+        const ageCtx = document.getElementById('ageChart').getContext('2d');
+        new Chart(ageCtx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(data.age_distribution),
+                datasets: [{
+                    data: Object.values(data.age_distribution),
+                    backgroundColor: ['#0e7c86', '#2a9d8f', '#e76f51', '#f4a261', '#e9c46a', '#2a9d8f']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+        
+        // Gender distribution
+        const genderCtx = document.getElementById('genderChart').getContext('2d');
+        new Chart(genderCtx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(data.gender_distribution),
+                datasets: [{
+                    data: Object.values(data.gender_distribution),
+                    backgroundColor: ['#0e7c86', '#e76f51', '#2a9d8f']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+        
+        // Purok distribution
+        const purokCtx = document.getElementById('purokChart').getContext('2d');
+        new Chart(purokCtx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(data.purok_distribution),
+                datasets: [{
+                    label: 'Number of Patients',
+                    data: Object.values(data.purok_distribution),
+                    backgroundColor: '#2a9d8f'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        document.getElementById('totalPatients').textContent = data.total_patients;
+        document.getElementById('pregnantPatients').textContent = data.pregnant_patients;
+    } catch (error) {
+        console.error('Error loading demographic stats:', error);
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadMorbidityStats();
+    loadDemographicStats();
+});
+</script>
+{% endblock %}

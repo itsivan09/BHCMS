@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+
+{% block title %}New Child OPT - BHCMS{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold text-dark mb-1">New Child OPT</h2>
+                    <p class="text-muted mb-0">Register a new child and record measurement.</p>
+                </div>
+                <a href="{{ url_for('bhw_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back
+                </a>
+            </div>
+
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header bg-success text-white p-4">
+                    <h5 class="mb-0 fw-bold"><i class="fas fa-child me-2"></i>New Child Registration & Measurement</h5>
+                </div>
+                
+                <div class="card-body p-4 p-md-5">
+                    <form action="{{ url_for('operation_timbang') }}" method="POST" id="optForm" novalidate>
+                        
+                        <h6 class="text-uppercase text-muted fw-bold small mb-3">1. Child Information</h6>
+                        
+                        <div class="mb-3">
+                            <label for="full_name" class="form-label fw-bold">Full Name <span class="text-danger">*</span></label>
+                            <input type="hidden" id="full_name" name="full_name" required>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <label class="form-label mb-1">Last Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="last_name" placeholder="Last Name" required pattern="[A-Za-zÑñ]+( [A-Za-zÑñ]+)*" title="Use letters and spaces only.">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label mb-1">First Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="first_name" placeholder="First Name" required pattern="[A-Za-zÑñ]+( [A-Za-zÑñ]+)*" title="Use letters and spaces only.">
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label mb-1">Second Name <span class="text-muted">(optional)</span></label>
+                                    <input type="text" class="form-control" id="second_name" placeholder="Second Name" pattern="[A-Za-zÑñ]+( [A-Za-zÑñ]+)*" title="Use letters and spaces only.">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label mb-1">Middle Initial</label>
+                                    <input type="text" class="form-control text-uppercase" id="middle_initial" placeholder="N/A" maxlength="3" pattern="([A-Z]|N/A)" title="Enter one capital letter or N/A.">
+                                </div>
+                            </div>
+                            <div class="invalid-feedback">Enter Last and First Name. Second Name and Middle Initial are optional.</div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label for="birth_date" class="form-label fw-bold">Birth Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="birth_date" name="birth_date" required>
+                                <div class="invalid-feedback" id="birthDateError">Birth date is required.</div>
+                                <div class="form-text small">Must be today or earlier. Children only (under 19 yrs).</div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="gender" class="form-label fw-bold">Gender <span class="text-danger">*</span></label>
+                                <select class="form-select" id="gender" name="gender" required>
+                                    <option value="" selected disabled>Select...</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                </select>
+                                <div class="invalid-feedback">Please select a gender.</div>
+                            </div>
+
+                           <div class="col-md-4">
+                                <label for="purok" class="form-label fw-bold">Purok / Zone <span class="text-danger">*</span></label>
+                                <select class="form-select" id="purok" name="purok" required>
+                                    <option value="" selected disabled>Select Zone...</option>
+                                    {% for zone in purok_choices %}
+                                        <option value="{{ zone }}">{{ zone }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="invalid-feedback">Please select a zone.</div>
+                            </div>
+                        </div>
+
+                        <hr class="text-muted opacity-25 my-4">
+
+                        <h6 class="text-uppercase text-muted fw-bold small mb-3">2. Vital Measurements</h6>
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label for="weight" class="form-label fw-bold text-primary">Weight (kg) <span class="text-danger">*</span></label>
+                                <div class="input-group input-group-lg">
+                                    <input type="number" step="0.01" min="0.5" max="200" class="form-control" id="weight" name="weight" placeholder="0.00" required>
+                                    <span class="input-group-text">kg</span>
+                                </div>
+                                <div class="invalid-feedback">Enter a valid weight (0.5 – 200 kg).</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="height" class="form-label fw-bold text-primary">Height (cm) <span class="text-danger">*</span></label>
+                                <div class="input-group input-group-lg">
+                                    <input type="number" step="0.1" min="30" max="250" class="form-control" id="height" name="height" placeholder="0.0" required>
+                                    <span class="input-group-text">cm</span>
+                                </div>
+                                <div class="invalid-feedback">Enter a valid height (30 – 250 cm).</div>
+                            </div>
+                        </div>
+
+                        <div id="bmi-calculator-result" style="margin-top: 10px; padding: 15px; border-radius: 8px; font-weight: bold; display: none; border-left: 5px solid;">
+                        </div>
+
+                        <div class="mb-4 mt-4">
+                            <label for="notes" class="form-label">Notes <span class="text-muted small">(optional)</span></label>
+                            <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="Any additional observations..."></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('bhw_dashboard') }}" class="btn btn-light btn-lg px-4">Cancel</a>
+                            <button type="submit" class="btn btn-primary btn-lg px-5" id="submitBtn" disabled>
+                                <i class="fas fa-save me-2"></i> Save New Child & OPT
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fullNameInput = document.getElementById('full_name');
+    const lastNameInput = document.getElementById('last_name');
+    const firstNameInput = document.getElementById('first_name');
+    const secondNameInput = document.getElementById('second_name');
+    const middleInitialInput = document.getElementById('middle_initial');
+    const birthInput  = document.getElementById('birth_date');
+    const genderInput = document.getElementById('gender');
+    const purokInput  = document.getElementById('purok');
+    const weightInput = document.getElementById('weight');
+    const heightInput = document.getElementById('height');
+    const notesArea   = document.getElementById('notes');
+    const bmiDisplay  = document.getElementById('bmi-calculator-result');
+    const submitBtn   = document.getElementById('submitBtn');
+    const birthError  = document.getElementById('birthDateError');
+
+    // Set max birth date to today (cannot register unborn children)
+    const todayStr = new Date().toISOString().split('T')[0];
+    birthInput.setAttribute('max', todayStr);
+
+    function composeStructuredName() {
+        const lastName = window.BHCMSNameUtils.sanitizeNamePart(lastNameInput.value).trim();
+        const firstName = window.BHCMSNameUtils.sanitizeNamePart(firstNameInput.value).trim();
+        const secondName = window.BHCMSNameUtils.sanitizeNamePart(secondNameInput.value).trim();
+
+        const rawMiddle = middleInitialInput.value.trim().toUpperCase();
+        let middleInitial = '';
+        if (rawMiddle === 'N/A' || rawMiddle === 'NA') {
+            middleInitial = 'N/A';
+        } else {
+            middleInitial = rawMiddle.replace(/[^A-Z]/g, '').slice(0, 1);
+        }
+
+        lastNameInput.value = lastName;
+        firstNameInput.value = firstName;
+        secondNameInput.value = secondName;
+        middleInitialInput.value = middleInitial;
+
+            if (!lastName || !firstName) {
+            fullNameInput.value = '';
+            return false;
+        }
+
+        const hasSecond = !!secondName;
+        const hasMiddleInitialLetter = !!middleInitial && middleInitial !== 'N/A';
+
+        if (hasSecond && hasMiddleInitialLetter) {
+            fullNameInput.value = `${lastName} - ${firstName} - ${secondName} - ${middleInitial}.`;
+        } else if (hasSecond) {
+            fullNameInput.value = `${lastName} - ${firstName} - ${secondName}`;
+        } else if (hasMiddleInitialLetter) {
+            fullNameInput.value = `${lastName} - ${firstName} - ${middleInitial}.`;
+        } else {
+            fullNameInput.value = `${lastName} - ${firstName}`;
+        }
+        return true;
+    }
+
+    // ── Age-aware BMI / Nutritional Status ───────────────────────────────────
+    // Uses simplified WHO-based thresholds per age group (years):
+    //   0–2 yrs  : weight-for-height based (very rough BMI approximation)
+    //   2–5 yrs  : BMI-for-age thresholds: <14 Under, 14–17 Normal, >17 Over, >22 Obese
+    //   5–10 yrs : BMI-for-age thresholds: <13.5 Under, 13.5–19 Normal, >19 Over, >24 Obese
+    //   10–19 yrs: adult-like thresholds:  <16 Under, 16–23 Normal, >23 Over, >28 Obese
+    function getAgeYears() {
+        if (!birthInput.value) return null;
+        const birth = new Date(birthInput.value);
+        const today = new Date();
+        return (today - birth) / (365.25 * 24 * 3600 * 1000);
+    }
+
+    function getThresholds(ageYears) {
+        if (ageYears < 2)  return { under: 14.0, over: 18.0, label: '0–2 yrs' };
+        if (ageYears < 5)  return { under: 14.0, over: 17.0, label: '2–5 yrs' };
+        if (ageYears < 10) return { under: 13.5, over: 19.0, label: '5–10 yrs' };
+        return              { under: 16.0, over: 23.0, label: '10–19 yrs' };
+    }
+
+    function calculateBMI() {
+        const weight   = parseFloat(weightInput.value);
+        const heightCm = parseFloat(heightInput.value);
+        const ageYears = getAgeYears();
+
+        if (weight > 0 && heightCm > 0 && ageYears !== null && ageYears > 0) {
+            const heightM    = heightCm / 100;
+            const bmi        = weight / (heightM * heightM);
+            const roundedBMI = bmi.toFixed(2);
+            const thresh     = getThresholds(ageYears);
+
+            let status, color, bgColor, borderColor;
+
+            if (bmi < thresh.under) {
+                status = 'Underweight / At Risk';
+                color = '#856404'; bgColor = '#fff3cd'; borderColor = '#ffc107';
+            } else if (bmi <= thresh.over) {
+                status = 'Normal Weight';
+                color = '#155724'; bgColor = '#d4edda'; borderColor = '#28a745';
+            } else if (bmi <= thresh.over + 5) {
+                status = 'Overweight';
+                color = '#721c24'; bgColor = '#f8d7da'; borderColor = '#dc3545';
+            } else {
+                status = 'Obese';
+                color = '#ffffff'; bgColor = '#dc3545'; borderColor = '#bd2130';
+            }
+
+            bmiDisplay.style.display      = 'block';
+            bmiDisplay.style.backgroundColor = bgColor;
+            bmiDisplay.style.color        = color;
+            bmiDisplay.style.borderColor  = borderColor;
+            bmiDisplay.innerHTML =
+                `<i class="fas fa-calculator me-2"></i>
+                 Live Assessment (${thresh.label}) — BMI: <strong>${roundedBMI}</strong> |
+                 Status: <strong>${status}</strong>
+                 <div class="small mt-1 opacity-75">Thresholds: Under &lt;${thresh.under} | Over &gt;${thresh.over} | Obese &gt;${(thresh.over + 5).toFixed(1)}</div>`;
+
+            // Append assessment to notes without overwriting what the user typed
+            const systemNote = `[Assessment: ${status}, BMI: ${roundedBMI}]`;
+            if (!notesArea.value.includes('[Assessment:')) {
+                notesArea.value = (notesArea.value.trim() ? notesArea.value.trim() + ' ' : '') + systemNote;
+            } else {
+                // Update existing assessment tag in place
+                notesArea.value = notesArea.value.replace(/\[Assessment:[^\]]*\]/, systemNote);
+            }
+        } else {
+            bmiDisplay.style.display = 'none';
+        }
+    }
+
+    // ── Form Validation ───────────────────────────────────────────────────────
+    function validateForm() {
+        let valid = true;
+
+        const nameComposed = composeStructuredName();
+        const nameFields = [lastNameInput, firstNameInput, secondNameInput, middleInitialInput];
+        if (!nameComposed) {
+            nameFields.forEach(el => el.classList.add('is-invalid'));
+            valid = false;
+        } else {
+            nameFields.forEach(el => {
+                el.classList.remove('is-invalid');
+                el.classList.add('is-valid');
+            });
+        }
+
+        // Birth date: required, not future, child under 19
+        const bdVal = birthInput.value;
+        if (!bdVal) {
+            birthInput.classList.add('is-invalid');
+            birthError.textContent = 'Birth date is required.';
+            valid = false;
+        } else if (bdVal > todayStr) {
+            birthInput.classList.add('is-invalid');
+            birthError.textContent = 'Birth date cannot be in the future.';
+            valid = false;
+        } else {
+            const ageYrs = getAgeYears();
+            if (ageYrs > 19) {
+                birthInput.classList.add('is-invalid');
+                birthError.textContent = 'OPT is for children under 19 years old only.';
+                valid = false;
+            } else {
+                birthInput.classList.remove('is-invalid');
+                birthInput.classList.add('is-valid');
+            }
+        }
+
+        // Gender
+        if (!genderInput.value) {
+            genderInput.classList.add('is-invalid');
+            valid = false;
+        } else {
+            genderInput.classList.remove('is-invalid');
+            genderInput.classList.add('is-valid');
+        }
+
+        // Purok
+        if (!purokInput.value) {
+            purokInput.classList.add('is-invalid');
+            valid = false;
+        } else {
+            purokInput.classList.remove('is-invalid');
+            purokInput.classList.add('is-valid');
+        }
+
+        // Weight: 0.5 – 200 kg
+        const wt = parseFloat(weightInput.value);
+        if (!weightInput.value || isNaN(wt) || wt < 0.5 || wt > 200) {
+            weightInput.classList.add('is-invalid');
+            valid = false;
+        } else {
+            weightInput.classList.remove('is-invalid');
+            weightInput.classList.add('is-valid');
+        }
+
+        // Height: 30 – 250 cm
+        const ht = parseFloat(heightInput.value);
+        if (!heightInput.value || isNaN(ht) || ht < 30 || ht > 250) {
+            heightInput.classList.add('is-invalid');
+            valid = false;
+        } else {
+            heightInput.classList.remove('is-invalid');
+            heightInput.classList.add('is-valid');
+        }
+
+        // Enable / disable submit
+        submitBtn.disabled = !valid;
+        submitBtn.classList.toggle('opacity-50', !valid);
+        return valid;
+    }
+
+    // ── Event listeners ───────────────────────────────────────────────────────
+    [lastNameInput, firstNameInput, secondNameInput, middleInitialInput, birthInput, genderInput, purokInput, weightInput, heightInput]
+        .forEach(el => el.addEventListener('input', function() {
+            validateForm();
+            calculateBMI();
+        }));
+
+    // Also trigger on select change
+    [genderInput, purokInput].forEach(el => el.addEventListener('change', function() {
+        validateForm();
+    }));
+
+    // Final guard on submit
+    document.getElementById('optForm').addEventListener('submit', function(e) {
+        if (!validateForm()) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
+
+    [lastNameInput, firstNameInput, secondNameInput].forEach(el => {
+        window.BHCMSNameUtils.bindNameTextInput(el, function() {
+            validateForm();
+        });
+    });
+
+    window.BHCMSNameUtils.bindMiddleInitialInput(middleInitialInput, function() {
+        validateForm();
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,1563 @@
+{% extends "base.html" %}
+
+{% block title %}Midwife Dashboard - BHCMS{% endblock %}
+
+{% block content %}
+
+<style>
+/* ═══════════════════════════════════════════════════
+   MIDWIFE DASHBOARD — REFINED PROFESSIONAL POLISH
+   Same structure as original, elevated aesthetics
+   Font: Plus Jakarta Sans (clean, medical-grade feel)
+═══════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+.mw-wrap * {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+/* ── PAGE BACKGROUND ─────────────────────────── */
+.mw-wrap {
+  background: #f3f6f9;
+  min-height: 100vh;
+  padding: 24px 0 56px;
+}
+
+/* ── WELCOME HEADER ──────────────────────────── */
+.mw-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding: 18px 22px;
+  border: 1px solid #dfe7ee;
+  border-radius: 14px;
+  background: #ffffff;
+}
+.mw-header-title {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #14323a;
+  letter-spacing: -.01em;
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mw-header-title i {
+  color: #0c6f79;
+  font-size: 1.25rem;
+}
+.mw-header-sub {
+  font-size: .86rem;
+  color: #6d8791;
+  margin: 0;
+  font-weight: 400;
+}
+.mw-header-sub strong {
+  color: #214b55;
+  font-weight: 600;
+}
+.mw-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 50px;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .03em;
+}
+.mw-badge-active {
+  background: #ecfdf4;
+  color: #166534;
+  border: 1px solid #bde7cf;
+}
+.mw-badge-role {
+  background: #ebf6f8;
+  color: #0c6f79;
+  border: 1px solid #cce6eb;
+}
+
+/* ── STAT CARDS ──────────────────────────────── */
+.mw-stat-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 3px 12px rgba(20,50,58,.06);
+  border: 1px solid #dfe7ee;
+  transition: border-color .2s ease, box-shadow .2s ease;
+  position: relative;
+  overflow: hidden;
+}
+.mw-stat-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .3s ease;
+}
+.mw-stat-card:hover {
+  box-shadow: 0 6px 18px rgba(20,50,58,.09);
+  border-color: #ccdde5;
+}
+.mw-stat-card:hover::after { transform: scaleX(1); }
+
+.mw-stat-icon {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--accent) 12%, white);
+  color: var(--accent);
+}
+.mw-stat-label {
+  font-size: .66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #8faeb5;
+  margin-bottom: 4px;
+}
+.mw-stat-number {
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #14323a;
+  letter-spacing: -.02em;
+}
+
+/* ── DASHBOARD CARDS ─────────────────────────── */
+.mw-card {
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 3px 12px rgba(20,50,58,.06);
+  border: 1px solid #dfe7ee;
+  overflow: hidden;
+  transition: border-color .2s ease, box-shadow .2s ease;
+  height: 100%;
+}
+.mw-card:hover {
+  box-shadow: 0 6px 18px rgba(20,50,58,.09);
+  border-color: #ccdde5;
+}
+.mw-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e9eff3;
+  background: #f8fbfd;
+}
+.mw-card-header h5 {
+  font-size: .9rem;
+  font-weight: 700;
+  color: #14323a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.mw-card-header h5 i { color: #0e7c86; font-size: 15px; }
+.mw-card-link {
+  font-size: .74rem;
+  font-weight: 600;
+  color: #0c6f79;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: #e9f5f7;
+  transition: background .15s, color .15s;
+}
+.mw-card-link:hover {
+  background: #0c6f79;
+  color: #fff;
+}
+.mw-card-body {
+  padding: 16px 18px;
+}
+
+/* ── PRENATAL ITEMS ──────────────────────────── */
+.prenatal-item {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f7fbfd;
+  border-left: 3px solid #0e7c86;
+  margin-bottom: 10px;
+  transition: background .15s;
+}
+.prenatal-item:last-child { margin-bottom: 0; }
+.prenatal-item:hover {
+  background: #eef7fa;
+}
+.prenatal-item h6 {
+  font-size: .88rem;
+  font-weight: 700;
+  color: #0d2b30;
+  margin: 0 0 4px;
+}
+.prenatal-item small {
+  font-size: .78rem;
+  color: #7a9ea5;
+  line-height: 1.6;
+}
+.prenatal-item small i { color: #0e7c86; margin-right: 4px; }
+
+/* Day badges */
+.days-badge {
+  font-size: .72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 50px;
+  white-space: nowrap;
+}
+.days-urgent  { background: #fee2e2; color: #b91c1c; }
+.days-normal  { background: #dbeafe; color: #1d4ed8; }
+
+/* ── VACCINE ITEMS ───────────────────────────── */
+.vaccine-section-title {
+  font-size: .7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.vaccine-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  transition: background .15s;
+}
+.vaccine-item:hover { background: #f8fafc; }
+.vaccine-item:last-child { margin-bottom: 0; }
+.vaccine-item-danger {
+  background: #fff5f5;
+  border: 1px solid #fecaca;
+  border-left: 3px solid #dc2626;
+}
+.vaccine-item-warning {
+  background: #fffbf0;
+  border: 1px solid #fde68a;
+  border-left: 3px solid #d97706;
+}
+.vaccine-name-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: .72rem;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+.vaccine-item-danger  .vaccine-name-badge { background: #dc2626; color: #fff; }
+.vaccine-item-warning .vaccine-name-badge { background: #d97706; color: #fff; }
+.vaccine-meta { font-size: .78rem; color: #7a9ea5; }
+
+/* ── SECTION DIVIDER ─────────────────────────── */
+.mw-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 30px 0 16px;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #dfe7ee;
+  border-radius: 12px;
+}
+.mw-section-divider-ico {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  background: #ebf6f8;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+  color: #0e7c86;
+}
+.mw-section-divider-text h4 {
+  font-size: .95rem;
+  font-weight: 700;
+  color: #14323a;
+  margin: 0 0 2px;
+}
+.mw-section-divider-text p {
+  font-size: .78rem;
+  color: #8faeb5;
+  margin: 0;
+}
+
+/* ── TABLE STYLES ────────────────────────────── */
+.mw-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.mw-table thead th {
+  font-size: .66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #8faeb5;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e9eff3;
+  background: #f8fbfd;
+}
+.mw-table tbody td {
+  padding: 11px 14px;
+  font-size: .86rem;
+  color: #2d5f68;
+  border-bottom: 1px solid #edf2f5;
+}
+.mw-table tbody tr:last-child td { border-bottom: 0; }
+.mw-table tbody tr:hover td { background: #f5fcfd; }
+.mw-table .td-name {
+  font-weight: 700;
+  color: #0d2b30;
+}
+.mw-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: .72rem;
+  font-weight: 700;
+}
+.mw-tag-teal   { background: #e0f7f8; color: #0e7c86; }
+.mw-tag-danger { background: #fee2e2; color: #b91c1c; }
+.mw-tag-green  { background: #d1fae5; color: #065f46; }
+.mw-tag-amber  { background: #fef3c7; color: #92400e; }
+
+/* ── NUTRITION ALERT ITEMS ───────────────────── */
+.nut-alert-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #edf2f5;
+  text-decoration: none;
+  transition: background .15s;
+}
+.nut-alert-item:last-child { border-bottom: 0; }
+.nut-alert-item:hover { background: #fff8f8; }
+.nut-alert-name {
+  font-size: .9rem;
+  font-weight: 700;
+  color: #0d2b30;
+  margin-bottom: 2px;
+}
+.nut-alert-meta {
+  font-size: .75rem;
+  color: #8faeb5;
+}
+
+/* ── TRIMESTER SECTION ───────────────────────── */
+.trim-info-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: #f6f9fb;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  transition: background .15s;
+}
+.trim-info-item:hover { background: #edf4f5; }
+.trim-info-item:last-child { margin-bottom: 0; }
+.trim-swatch {
+  width: 4px;
+  height: 38px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.trim-info-item strong { font-size: .88rem; color: #0d2b30; font-weight: 700; display: block; }
+.trim-info-item small  { font-size: .75rem; color: #8faeb5; }
+.trim-total-box {
+  background: #edf7f9;
+  border: 1px solid #cfe5ea;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  margin-top: 16px;
+}
+.trim-total-box .total-label {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #4fa8b0;
+  margin-bottom: 6px;
+}
+.trim-total-box .total-num {
+  font-size: 2.3rem;
+  font-weight: 700;
+  color: #0c6f79;
+  line-height: 1;
+  letter-spacing: -.04em;
+}
+
+/* ── QUICK ACTIONS ───────────────────────────── */
+.qa-section-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid #dfe7ee;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  background: #ffffff;
+}
+.qa-section-icon {
+  width: 40px; height: 40px;
+  border-radius: 11px;
+  background: #0c6f79;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-size: 16px;
+  box-shadow: none;
+  flex-shrink: 0;
+}
+.qa-section-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0d2b30;
+  margin: 0 0 2px;
+}
+.qa-section-sub {
+  font-size: .78rem;
+  color: #8faeb5;
+  margin: 0;
+}
+.qa-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid #dfe7ee;
+  border-radius: 14px;
+  padding: 16px;
+  text-decoration: none !important;
+  color: inherit !important;
+  box-shadow: 0 3px 12px rgba(20,50,58,.06);
+  transition: box-shadow .2s ease, border-color .2s ease;
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+button.qa-card {
+  width: 100%;
+  border: 0;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.qa-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--qc, #0e7c86);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .28s ease;
+}
+.qa-card:hover {
+  transform: none;
+  box-shadow: 0 6px 18px rgba(20,50,58,.09);
+  border-color: var(--qc, #0e7c86);
+}
+.qa-card:hover::before { transform: scaleX(1); }
+.qa-card:hover .qa-arrow { opacity: 1; transform: translateX(0); }
+
+.qa-top { display: flex; align-items: center; justify-content: space-between; }
+.qa-ico {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  background: color-mix(in srgb, var(--qc, #0e7c86) 10%, white);
+  color: var(--qc, #0e7c86);
+  transition: transform .2s ease;
+  flex-shrink: 0;
+}
+.qa-card:hover .qa-ico  { transform: scale(1.04); }
+.qa-chip {
+  font-size: .68rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 6px;
+  letter-spacing: .03em;
+  background: color-mix(in srgb, var(--qc, #0e7c86) 10%, white);
+  color: var(--qc, #0e7c86);
+  border: 1px solid color-mix(in srgb, var(--qc, #0e7c86) 20%, white);
+  white-space: nowrap;
+}
+.qa-title {
+  font-size: .88rem;
+  font-weight: 700;
+  color: #14323a;
+  margin-bottom: 4px;
+  letter-spacing: -.01em;
+}
+.qa-desc {
+  font-size: .75rem;
+  color: #6d8791;
+  line-height: 1.5;
+  flex: 1;
+}
+.qa-urgent { color: #dc2626; font-weight: 700; }
+.qa-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid #e9eff3;
+}
+.qa-cta {
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--qc, #0e7c86);
+  letter-spacing: .04em;
+}
+.qa-arrow {
+  width: 24px; height: 24px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--qc, #0e7c86) 10%, white);
+  color: var(--qc, #0e7c86);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px;
+  opacity: .6;
+  transform: translateX(0);
+  transition: opacity .2s, transform .2s;
+}
+
+/* Color themes */
+.qa-teal   { --qc: #0e7c86; }
+.qa-rose   { --qc: #e11d48; }
+.qa-amber  { --qc: #d97706; }
+.qa-danger { --qc: #dc2626; }
+.qa-blue   { --qc: #2563eb; }
+.qa-indigo { --qc: #4f46e5; }
+.qa-green  { --qc: #059669; }
+.qa-purple { --qc: #7c3aed; }
+.qa-orange { --qc: #ea580c; }
+
+/* ── EMPTY STATE ─────────────────────────────── */
+.mw-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #c4d5d9;
+}
+.mw-empty i { font-size: 40px; margin-bottom: 12px; display: block; }
+.mw-empty p { font-size: .86rem; color: #8faeb5; margin: 0; }
+
+/* ── SCROLLABLE BODY ─────────────────────────── */
+.mw-scroll {
+  max-height: 290px;
+  overflow-y: auto;
+}
+.mw-scroll::-webkit-scrollbar { width: 4px; }
+.mw-scroll::-webkit-scrollbar-track { background: transparent; }
+.mw-scroll::-webkit-scrollbar-thumb { background: #c4d5d9; border-radius: 4px; }
+
+/* ── ADD SCHEDULE BUTTON ─────────────────────── */
+.btn-add-schedule {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #0c6f79;
+  color: #fff !important;
+  border: none;
+  border-radius: 7px;
+  font-size: .76rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none !important;
+  transition: background .15s, transform .15s;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.btn-add-schedule:hover { background: #0a5f67; transform: translateY(-1px); }
+
+/* ── MODAL ───────────────────────────────────── */
+.mw-modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(8,40,45,.5);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+}
+.mw-modal-overlay.open { display: flex; }
+.mw-modal {
+  background: #fff;
+  border-radius: 14px;
+  width: 540px;
+  max-width: calc(100vw - 32px);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 18px 42px rgba(8,40,45,.2);
+  animation: modalIn .28s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(20px) scale(.97); }
+  to   { opacity: 1; transform: none; }
+}
+.mw-modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e9eff3;
+}
+.mw-modal-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0d2b30;
+  display: flex; align-items: center; gap: 10px;
+}
+.mw-modal-title i { color: #0e7c86; }
+.mw-modal-close {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: 1.5px solid #e2eaed;
+  background: #f5f7fa;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 13px; color: #8faeb5;
+  transition: background .15s, color .15s;
+}
+.mw-modal-close:hover { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+.mw-modal-body { padding: 16px 20px; }
+.mw-modal-foot {
+  display: flex; justify-content: flex-end; gap: 10px;
+  padding: 12px 20px 16px;
+  border-top: 1px solid #e9eff3;
+}
+
+/* Form elements */
+.mw-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.mw-form-grid.full { grid-template-columns: 1fr; }
+.mw-form-group { display: flex; flex-direction: column; gap: 6px; }
+.mw-form-group.span2 { grid-column: 1 / -1; }
+.mw-label {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: #4a7a84;
+}
+.mw-label .req { color: #dc2626; }
+.mw-input {
+  padding: 10px 13px;
+  border: 1.5px solid #dce9ec;
+  border-radius: 10px;
+  font-size: .88rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: #0d2b30;
+  background: #fff;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.mw-input:focus {
+  border-color: #0e7c86;
+  box-shadow: 0 0 0 3px rgba(14,124,134,.12);
+}
+.mw-hint { font-size: .72rem; color: #8faeb5; }
+
+/* Patient search */
+.patient-search-wrap { position: relative; }
+.patient-search-wrap .search-icon {
+  position: absolute;
+  left: 12px; top: 50%;
+  transform: translateY(-50%);
+  color: #8faeb5; font-size: 12px;
+  pointer-events: none;
+}
+.patient-search-wrap .mw-input { padding-left: 34px; width: 100%; }
+.patient-dropdown {
+  display: none;
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 100;
+  background: #fff;
+  border: 1.5px solid #dce9ec;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(13,43,48,.12);
+  max-height: 200px; overflow-y: auto;
+}
+.patient-dropdown.open { display: block; }
+.patient-opt {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; cursor: pointer;
+  transition: background .1s; font-size: .84rem;
+}
+.patient-opt:hover { background: #f5fcfd; }
+.patient-opt-name { font-weight: 700; color: #0d2b30; }
+.patient-opt-meta { font-size: .72rem; color: #8faeb5; }
+
+/* Buttons */
+.btn-mw-save {
+  padding: 10px 22px;
+  background: #0e7c86; color: #fff;
+  border: none; border-radius: 10px;
+  font-size: .88rem; font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer;
+  transition: background .15s, transform .15s;
+}
+.btn-mw-save:hover { background: #0a5f67; transform: translateY(-1px); }
+.btn-mw-cancel {
+  padding: 10px 18px;
+  background: #f0f5f6; color: #2d5f68;
+  border: none; border-radius: 10px;
+  font-size: .88rem; font-weight: 600;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-mw-cancel:hover { background: #dce9ec; }
+
+/* ── ANIMATIONS ──────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.mw-anim-1,
+.mw-anim-2,
+.mw-anim-3,
+.mw-anim-4,
+.mw-anim-5 { animation: none; }
+
+@keyframes qaSlide {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.qa-row .col-xl-3:nth-child(1) .qa-card,
+.qa-row .col-xl-3:nth-child(2) .qa-card,
+.qa-row .col-xl-3:nth-child(3) .qa-card,
+.qa-row .col-xl-3:nth-child(4) .qa-card,
+.qa-row .col-xl-3:nth-child(5) .qa-card,
+.qa-row .col-xl-3:nth-child(6) .qa-card,
+.qa-row .col-xl-3:nth-child(7) .qa-card,
+.qa-row .col-xl-3:nth-child(8) .qa-card { animation: none; }
+
+@media (max-width: 767px) {
+  .mw-header { flex-wrap: wrap; gap: 12px; }
+  .mw-header .d-flex { flex-wrap: wrap; }
+}
+</style>
+
+<div class="mw-wrap">
+<div class="container-lg">
+
+  <!-- ══════════════════════════════════════════
+       HEADER
+  ══════════════════════════════════════════ -->
+  <div class="mw-header mw-anim-1">
+    <div>
+      <h1 class="mw-header-title">
+        <i class="fas fa-heart-pulse"></i>Midwife Dashboard
+      </h1>
+      <p class="mw-header-sub">Welcome, <strong>{{ current_user.full_name }}</strong></p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <span class="mw-badge mw-badge-active">
+        <i class="fas fa-circle" style="font-size:7px;"></i> Active
+      </span>
+      <span class="mw-badge mw-badge-role">
+        <i class="fas fa-user-nurse"></i> Midwife
+      </span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       STAT CARDS
+  ══════════════════════════════════════════ -->
+  <div class="row g-3 mb-4 mw-anim-2">
+    <div class="col-md-3 col-sm-6">
+      <div class="mw-stat-card" style="--accent:#0e7c86;">
+        <div class="mw-stat-icon"><i class="fas fa-baby"></i></div>
+        <div>
+          <div class="mw-stat-label">Pregnant Mothers</div>
+          <div class="mw-stat-number">{{ pregnant_patients|length }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <div class="mw-stat-card" style="--accent:#d97706;">
+        <div class="mw-stat-icon"><i class="fas fa-syringe"></i></div>
+        <div>
+          <div class="mw-stat-label">Vaccines Due</div>
+          <div class="mw-stat-number">{{ upcoming_vaccines|length }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <div class="mw-stat-card" style="--accent:#dc2626;">
+        <div class="mw-stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <div>
+          <div class="mw-stat-label">Overdue Vaccines</div>
+          <div class="mw-stat-number">{{ overdue_vaccines|length }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <div class="mw-stat-card" style="--accent:#4f46e5;">
+        <div class="mw-stat-icon"><i class="fas fa-users"></i></div>
+        <div>
+          <div class="mw-stat-label">Total Patients</div>
+          <div class="mw-stat-number">{{ total_patients }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       PRENATAL + IMMUNIZATION
+  ══════════════════════════════════════════ -->
+  <div class="row g-3 mb-4 mw-anim-3">
+
+    <!-- Pregnant Mothers -->
+    <div class="col-lg-6">
+      <div class="mw-card">
+        <div class="mw-card-header">
+          <h5><i class="fas fa-heartbeat"></i>Pregnant Mothers (Prenatal)</h5>
+          <a href="{{ url_for('maternal.prenatal_tracker') }}" class="mw-card-link">
+            View All <i class="fas fa-arrow-right" style="font-size:10px;"></i>
+          </a>
+        </div>
+        <div class="mw-card-body">
+          {% if pregnant_patients %}
+            {% for data in pregnant_patients[:5] %}
+              <div class="prenatal-item">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <h6>{{ data.patient.full_name }}</h6>
+                  <span class="days-badge {% if data.days_until_delivery < 14 %}days-urgent{% else %}days-normal{% endif %}">
+                    {{ data.days_until_delivery }} days
+                  </span>
+                </div>
+                <small>
+                  <i class="fas fa-calendar"></i>EDD: {{ data.record.estimated_delivery_date.strftime('%B %d, %Y') }}<br>
+                  <i class="fas fa-ruler"></i>{{ data.record.weeks_of_pregnancy }} weeks pregnant
+                </small>
+              </div>
+            {% endfor %}
+            {% if pregnant_patients|length > 5 %}
+              <p class="text-muted mt-3 mb-0" style="font-size:.8rem;">+{{ pregnant_patients|length - 5 }} more mothers</p>
+            {% endif %}
+          {% else %}
+            <div class="mw-empty">
+              <i class="fas fa-inbox"></i>
+              <p>No pregnant mothers currently tracked</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Immunization Schedule -->
+    <div class="col-lg-6">
+      <div class="mw-card">
+        <div class="mw-card-header">
+          <h5><i class="fas fa-syringe" style="color:#d97706;"></i>Immunization Schedule</h5>
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn-add-schedule" onclick="openModal()">
+              <i class="fas fa-plus"></i> Schedule
+            </button>
+            <a href="{{ url_for('maternal.immunization_schedule') }}" class="mw-card-link">
+              View All <i class="fas fa-arrow-right" style="font-size:10px;"></i>
+            </a>
+          </div>
+        </div>
+        <div class="mw-card-body">
+          {% if upcoming_vaccines or overdue_vaccines %}
+            {% if overdue_vaccines %}
+              <p class="vaccine-section-title" style="color:#b91c1c;">
+                <i class="fas fa-exclamation-circle"></i>Overdue
+              </p>
+              {% for vaccine in overdue_vaccines[:3] %}
+                <div class="vaccine-item vaccine-item-danger">
+                  <div class="flex-grow-1">
+                    <span class="vaccine-name-badge">{{ vaccine.vaccine_name }}</span>
+                    <div class="vaccine-meta">{{ vaccine.patient.full_name }} &bull; {{ vaccine.scheduled_date.strftime('%b %d, %Y') }}</div>
+                  </div>
+                </div>
+              {% endfor %}
+            {% endif %}
+            {% if upcoming_vaccines %}
+              <p class="vaccine-section-title mt-3" style="color:#059669;">
+                <i class="fas fa-calendar-check"></i>Due This Week
+              </p>
+              {% for vaccine in upcoming_vaccines[:3] %}
+                <div class="vaccine-item vaccine-item-warning">
+                  <div class="flex-grow-1">
+                    <span class="vaccine-name-badge">{{ vaccine.vaccine_name }}</span>
+                    <div class="vaccine-meta">{{ vaccine.patient.full_name }} &bull; {{ vaccine.scheduled_date.strftime('%b %d, %Y') }}</div>
+                  </div>
+                </div>
+              {% endfor %}
+            {% endif %}
+          {% else %}
+            <div class="mw-empty">
+              <i class="fas fa-check-circle" style="color:#059669;"></i>
+              <p>No pending vaccines</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       COMMUNITY HEALTH MONITORING
+  ══════════════════════════════════════════ -->
+  <div class="mw-section-divider mw-anim-4">
+    <div class="mw-section-divider-ico">
+      <i class="fas fa-users-cog"></i>
+    </div>
+    <div class="mw-section-divider-text">
+      <h4>Community Health Monitoring (BHW Activities)</h4>
+      <p>Overview of household profiling and nutritional assessments performed by BHWs.</p>
+    </div>
+  </div>
+
+  <!-- Household + Nutrition Alerts -->
+  <div class="row g-3 mb-4 mw-anim-4">
+    <div class="col-lg-8">
+      <div class="mw-card">
+        <div class="mw-card-header">
+          <h5><i class="fas fa-map-marked-alt"></i>Household Profiling by Purok</h5>
+        </div>
+        <div class="table-responsive">
+          <table class="mw-table">
+            <thead>
+              <tr>
+                <th>Purok / Zone</th>
+                <th class="text-center">Households</th>
+                <th class="text-center">Members</th>
+                <th class="text-end" style="padding-right:24px;">Coverage</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if purok_stats %}
+                {% for purok, stats in purok_stats.items() %}
+                <tr>
+                  <td class="td-name">{{ purok }}</td>
+                  <td class="text-center">{{ stats.households }}</td>
+                  <td class="text-center">{{ stats.members }}</td>
+                  <td class="text-end" style="padding-right:24px;">
+                    <span class="mw-tag mw-tag-teal">Active Monitoring</span>
+                  </td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="4" class="text-center py-5" style="color:#8faeb5;">
+                    <i class="fas fa-clipboard-list fa-2x mb-2 d-block" style="color:#c4d5d9;"></i>
+                    No household profiles recorded yet.
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="mw-card" style="overflow:hidden;">
+        <div class="mw-card-header">
+          <h5><i class="fas fa-exclamation-circle" style="color:#dc2626;"></i>Nutrition Alerts</h5>
+        </div>
+        {% if malnourished_children %}
+          {% for record in malnourished_children[:5] %}
+            <a href="{{ url_for('operation_timbang_history', patient_id=record.patient.id) }}" class="nut-alert-item">
+              <div>
+                <div class="nut-alert-name">{{ record.patient.full_name }}</div>
+                <div class="nut-alert-meta">Purok: {{ record.patient.purok }} &bull; BMI: {{ record.bmi }}</div>
+              </div>
+              <span class="mw-tag mw-tag-danger">{{ record.nutritional_status }}</span>
+            </a>
+          {% endfor %}
+          {% if malnourished_children|length > 5 %}
+            <div class="text-center py-3 border-top" style="border-color:#f5f7fa !important;">
+              <small style="color:#8faeb5;">+{{ malnourished_children|length - 5 }} more alerts pending</small>
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="mw-empty">
+            <i class="fas fa-check-circle" style="color:#059669;"></i>
+            <p>No malnourished cases requiring immediate follow-up.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Household + OPT -->
+  <div class="row g-3 mb-5 mw-anim-4">
+    <div class="col-lg-6">
+      <div class="mw-card">
+        <div class="mw-card-header">
+          <h5><i class="fas fa-home"></i>Recent Household Profiles</h5>
+        </div>
+        <div class="mw-scroll">
+          <table class="mw-table">
+            <thead>
+              <tr>
+                <th>Head of Family</th>
+                <th>Purok</th>
+                <th class="text-center">Members</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if household_profiles %}
+                {% for house in household_profiles %}
+                  <tr>
+                    <td class="td-name">{{ house.household_head_name }}</td>
+                    <td>{{ house.purok }}</td>
+                    <td class="text-center">{{ house.number_of_members }}</td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr><td colspan="3" class="text-center py-4" style="color:#8faeb5;">No data found</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="mw-card">
+        <div class="mw-card-header">
+          <h5><i class="fas fa-weight" style="color:#d97706;"></i>Recent OPT Records</h5>
+        </div>
+        <div class="mw-scroll">
+          <table class="mw-table">
+            <thead>
+              <tr>
+                <th>Child Name</th>
+                <th>Weight / Height</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if opt_records %}
+                {% for opt in opt_records %}
+                  <tr>
+                    <td class="td-name">{{ opt.patient.full_name }}</td>
+                    <td>{{ opt.weight_kg }}kg / {{ opt.height_cm }}cm</td>
+                    <td>
+                      <span class="mw-tag {% if 'Normal' in opt.nutritional_status %}mw-tag-green{% else %}mw-tag-danger{% endif %}">
+                        {{ opt.nutritional_status }}
+                      </span>
+                    </td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr><td colspan="3" class="text-center py-4" style="color:#8faeb5;">No records found</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       TRIMESTER CHART
+  ══════════════════════════════════════════ -->
+  <div class="row g-3 mb-5 mw-anim-5">
+    <div class="col-lg-8">
+      <div class="mw-card">
+        <div class="mw-card-header">
+          <h5><i class="fas fa-chart-pie"></i>Pregnant Mothers by Trimester</h5>
+        </div>
+        <div class="mw-card-body" style="position:relative;height:300px;">
+          <canvas id="prenatalChart"></canvas>
+          <div id="chartLoading" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#8faeb5;font-size:.85rem;">
+            <i class="fas fa-spinner fa-spin me-1"></i>Loading chart…
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="mw-card">
+        <div class="mw-card-header">
+          <h5><i class="fas fa-info-circle"></i>Trimester Information</h5>
+        </div>
+        <div class="mw-card-body">
+          <div class="trim-info-item">
+            <div class="trim-swatch" style="background:#0e7c86;"></div>
+            <div>
+              <strong>1st Trimester</strong>
+              <small class="d-block">Weeks 1–12</small>
+              <small>Foundation &amp; Monitoring</small>
+            </div>
+          </div>
+          <div class="trim-info-item">
+            <div class="trim-swatch" style="background:#2a9d8f;"></div>
+            <div>
+              <strong>2nd Trimester</strong>
+              <small class="d-block">Weeks 13–26</small>
+              <small>Growth &amp; Development</small>
+            </div>
+          </div>
+          <div class="trim-info-item">
+            <div class="trim-swatch" style="background:#d97706;"></div>
+            <div>
+              <strong>3rd Trimester</strong>
+              <small class="d-block">Weeks 27+</small>
+              <small>Preparation &amp; Delivery</small>
+            </div>
+          </div>
+          <div class="trim-total-box">
+            <div class="total-label">Total Pregnant Mothers</div>
+            <div class="total-num" id="totalMothers">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       QUICK ACTIONS
+  ══════════════════════════════════════════ -->
+  <div class="mb-5">
+    <div class="qa-section-head">
+      <div class="qa-section-icon"><i class="fas fa-bolt"></i></div>
+      <div>
+        <div class="qa-section-title">Quick Actions</div>
+        <p class="qa-section-sub">Jump directly to any feature — live counts shown on each card</p>
+      </div>
+    </div>
+    <div class="row g-3 qa-row">
+
+      <div class="col-xl-3 col-lg-4 col-md-6">
+        <a href="{{ url_for('patients.patients') }}" class="qa-card qa-teal">
+          <div class="qa-top">
+            <div class="qa-ico"><i class="fas fa-users"></i></div>
+            <span class="qa-chip">{{ total_patients }} registered</span>
+          </div>
+          <div class="qa-title">Manage Patients</div>
+          <div class="qa-desc">View, add, search, edit or delete patient profiles and medical records.</div>
+          <div class="qa-foot">
+            <span class="qa-cta">Open Patient List</span>
+            <span class="qa-arrow"><i class="fas fa-arrow-right"></i></span>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-xl-3 col-lg-4 col-md-6">
+        <a href="{{ url_for('maternal.prenatal_tracker') }}" class="qa-card qa-rose">
+          <div class="qa-top">
+            <div class="qa-ico"><i class="fas fa-baby"></i></div>
+            {% if pregnant_patients %}
+              <span class="qa-chip">{{ pregnant_patients|length }} active</span>
+            {% else %}
+              <span class="qa-chip">No enrollees yet</span>
+            {% endif %}
+          </div>
+          <div class="qa-title">Prenatal Tracker</div>
+          <div class="qa-desc">Monitor pregnant mothers by trimester, EDD, and high-risk flags. Enroll new patients.</div>
+          <div class="qa-foot">
+            <span class="qa-cta">View Tracker</span>
+            <span class="qa-arrow"><i class="fas fa-arrow-right"></i></span>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-xl-3 col-lg-4 col-md-6">
+        <button type="button" onclick="openModal()" class="qa-card {% if overdue_vaccines %}qa-danger{% else %}qa-amber{% endif %}">
+          <div class="qa-top">
+            <div class="qa-ico"><i class="fas fa-syringe"></i></div>
+            {% if overdue_vaccines %}
+              <span class="qa-chip"><i class="fas fa-exclamation-circle me-1"></i>{{ overdue_vaccines|length }} overdue</span>
+            {% elif upcoming_vaccines %}
+              <span class="qa-chip">{{ upcoming_vaccines|length }} due this week</span>
+            {% else %}
+              <span class="qa-chip">All clear ✓</span>
+            {% endif %}
+          </div>
+          <div class="qa-title">Immunizations</div>
+          <div class="qa-desc">
+            {% if overdue_vaccines %}
+              <span class="qa-urgent">⚠ {{ overdue_vaccines|length }} vaccine(s) overdue</span> — requires immediate action.
+            {% elif upcoming_vaccines %}
+              {{ upcoming_vaccines|length }} vaccine(s) scheduled within the next 7 days.
+            {% else %}
+              No pending vaccines. Schedule is fully up to date.
+            {% endif %}
+          </div>
+          <div class="qa-foot">
+            <span class="qa-cta">Open Scheduler</span>
+            <span class="qa-arrow"><i class="fas fa-arrow-right"></i></span>
+          </div>
+        </button>
+      </div>
+
+      <div class="col-xl-3 col-lg-4 col-md-6">
+        <a href="{{ url_for('patients.patients') }}" class="qa-card qa-blue">
+          <div class="qa-top">
+            <div class="qa-ico"><i class="fas fa-stethoscope"></i></div>
+            <span class="qa-chip">Step 1 → pick patient</span>
+          </div>
+          <div class="qa-title">New Consultation</div>
+          <div class="qa-desc">Record vital signs, diagnosis, and dispense medicines. Select a patient first to begin.</div>
+          <div class="qa-foot">
+            <span class="qa-cta">Select Patient</span>
+            <span class="qa-arrow"><i class="fas fa-arrow-right"></i></span>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-xl-3 col-lg-4 col-md-6">
+        <a href="{{ url_for('appointments.view_appointments') }}" class="qa-card qa-indigo">
+          <div class="qa-top">
+            <div class="qa-ico"><i class="fas fa-calendar-check"></i></div>
+            <span class="qa-chip">Book &amp; manage</span>
+          </div>
+          <div class="qa-title">Appointments</div>
+          <div class="qa-desc">View upcoming and past appointments. Book new slots or cancel existing ones.</div>
+          <div class="qa-foot">
+            <span class="qa-cta">Open Appointments</span>
+            <span class="qa-arrow"><i class="fas fa-arrow-right"></i></span>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-xl-3 col-lg-4 col-md-6">
+        <a href="{{ url_for('inventory.inventory') }}" class="qa-card qa-green">
+          <div class="qa-top">
+            <div class="qa-ico"><i class="fas fa-box-open"></i></div>
+            <span class="qa-chip">Medicines &amp; supplies</span>
+          </div>
+          <div class="qa-title">Inventory</div>
+          <div class="qa-desc">Check stock levels, add items, and identify supplies that are expired or running low.</div>
+          <div class="qa-foot">
+            <span class="qa-cta">View Inventory</span>
+            <span class="qa-arrow"><i class="fas fa-arrow-right"></i></span>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-xl-3 col-lg-4 col-md-6">
+        <a href="{{ url_for('reports.reports') }}" class="qa-card qa-purple">
+          <div class="qa-top">
+            <div class="qa-ico"><i class="fas fa-chart-bar"></i></div>
+            <span class="qa-chip">Analytics</span>
+          </div>
+          <div class="qa-title">Reports</div>
+          <div class="qa-desc">View morbidity stats, demographic breakdown, and export data to CSV or Excel.</div>
+          <div class="qa-foot">
+            <span class="qa-cta">View Reports</span>
+            <span class="qa-arrow"><i class="fas fa-arrow-right"></i></span>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-xl-3 col-lg-4 col-md-6">
+        <a href="{{ url_for('bhw.bhw_dashboard') }}" class="qa-card qa-orange">
+          <div class="qa-top">
+            <div class="qa-ico"><i class="fas fa-house-user"></i></div>
+            <span class="qa-chip">{{ household_count }} households</span>
+          </div>
+          <div class="qa-title">BHW Overview</div>
+          <div class="qa-desc">View all household profiles, OPT nutrition records, and follow-up cases from BHWs.</div>
+          <div class="qa-foot">
+            <span class="qa-cta">Open BHW View</span>
+            <span class="qa-arrow"><i class="fas fa-arrow-right"></i></span>
+          </div>
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /container-lg -->
+</div><!-- /mw-wrap -->
+
+
+<!-- ══════════════════════════════════════════════
+     SCHEDULE IMMUNIZATION MODAL
+══════════════════════════════════════════════ -->
+<div class="mw-modal-overlay" id="schedModal">
+  <div class="mw-modal">
+    <div class="mw-modal-head">
+      <div class="mw-modal-title">
+        <i class="fas fa-syringe"></i> Schedule Immunization
+      </div>
+      <button class="mw-modal-close" onclick="closeModal()" type="button">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <form action="{{ url_for('maternal.immunization_schedule') }}" method="POST" id="schedForm">
+      <div class="mw-modal-body">
+
+        <!-- Patient search -->
+        <div class="mw-form-group mb-3">
+          <label class="mw-label">Patient <span class="req">*</span></label>
+          <div class="patient-search-wrap">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" class="mw-input" id="patientSearch"
+                   placeholder="Type to search patient…" autocomplete="off">
+            <input type="hidden" name="patient_id" id="patientId">
+            <div class="patient-dropdown" id="patientDropdown"></div>
+          </div>
+          <span class="mw-hint">Search by patient name</span>
+        </div>
+
+        <!-- Vaccine + Dose -->
+        <div class="mw-form-grid mb-3">
+          <div class="mw-form-group">
+            <label class="mw-label">Vaccine <span class="req">*</span></label>
+            <select name="vaccine_name" class="mw-input" id="vaccineSelect" required>
+              <option value="">— Select vaccine —</option>
+              <option>BCG</option>
+              <option>Hepatitis B (Birth Dose)</option>
+              <option>Pentavalent (DPT-HepB-Hib)</option>
+              <option>OPV (Oral Polio)</option>
+              <option>IPV (Inactivated Polio)</option>
+              <option>PCV (Pneumococcal)</option>
+              <option>MMR</option>
+              <option>Varicella</option>
+              <option>Tetanus Toxoid (TT)</option>
+              <option>Influenza</option>
+              <option value="__other__">Other (specify below)</option>
+            </select>
+          </div>
+          <div class="mw-form-group">
+            <label class="mw-label">Dose</label>
+            <select name="dose_number" class="mw-input">
+              <option value="1">1st Dose</option>
+              <option value="2">2nd Dose</option>
+              <option value="3">3rd Dose</option>
+              <option value="booster">Booster</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Other vaccine (hidden) -->
+        <div class="mw-form-group mb-3" id="otherVaxGroup" style="display:none;">
+          <label class="mw-label">Specify Vaccine <span class="req">*</span></label>
+          <input type="text" name="vaccine_name_other" class="mw-input"
+                 placeholder="Enter vaccine name" id="otherVaxInput">
+        </div>
+
+        <!-- Date + Time -->
+        <div class="mw-form-grid mb-3">
+          <div class="mw-form-group">
+            <label class="mw-label">Scheduled Date <span class="req">*</span></label>
+            <input type="date" name="scheduled_date" class="mw-input" id="schedDate" required>
+          </div>
+          <div class="mw-form-group">
+            <label class="mw-label">Time <span style="color:#8faeb5;font-weight:400;">(optional)</span></label>
+            <input type="time" name="scheduled_time" class="mw-input">
+          </div>
+        </div>
+
+        <!-- Administered by + Location -->
+        <div class="mw-form-grid mb-3">
+          <div class="mw-form-group">
+            <label class="mw-label">Administered By</label>
+            <input type="text" name="administered_by" class="mw-input"
+                   value="{{ current_user.full_name }}" placeholder="Nurse / Midwife name">
+          </div>
+          <div class="mw-form-group">
+            <label class="mw-label">Location / Site</label>
+            <input type="text" name="location" class="mw-input"
+                   placeholder="e.g. Barangay Health Center">
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="mw-form-group">
+          <label class="mw-label">Notes / Remarks</label>
+          <textarea name="notes" class="mw-input" rows="2"
+                    placeholder="Special instructions or observations…"
+                    style="resize:vertical;"></textarea>
+        </div>
+
+      </div><!-- /modal-body -->
+
+      <div class="mw-modal-foot">
+        <button type="button" class="btn-mw-cancel" onclick="closeModal()">Cancel</button>
+        <button type="button" class="btn-mw-save" onclick="submitSched()">
+          <i class="fas fa-calendar-check me-2"></i>Confirm Schedule
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+
+<script>
+/* ── CHART ───────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+
+  // Set min date on schedule date picker
+  const today = new Date().toISOString().split('T')[0];
+  const dp = document.getElementById('schedDate');
+  if (dp) dp.min = today;
+
+  // Prenatal chart
+  fetch('/api/prenatal_stats')
+    .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+    .then(data => {
+      const ld = document.getElementById('chartLoading');
+      if (ld) ld.style.display = 'none';
+
+      const tm = document.getElementById('totalMothers');
+      if (tm) tm.textContent = data.total_mothers;
+
+      const ctx = document.getElementById('prenatalChart');
+      if (!ctx) return;
+
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: data.labels, datasets: data.datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          cutout: '62%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                padding: 20,
+                font: { size: 12, weight: '600', family: 'Plus Jakarta Sans' },
+                color: '#2d5f68',
+                usePointStyle: true, pointStyle: 'circle'
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(13,43,48,.9)',
+              padding: 12, cornerRadius: 10,
+              titleFont: { size: 13, weight: 'bold' },
+              bodyFont: { size: 12 },
+              callbacks: {
+                label: c => {
+                  const t = c.dataset.data.reduce((a, b) => a + b, 0);
+                  return ` ${c.label}: ${c.parsed} (${((c.parsed / t) * 100).toFixed(1)}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    })
+    .catch(() => {
+      const ld = document.getElementById('chartLoading');
+      if (ld) { ld.textContent = 'Unable to load chart data.'; ld.style.color = '#dc2626'; }
+    });
+
+  /* ── PATIENT SEARCH ──────────────────────── */
+  const searchInput = document.getElementById('patientSearch');
+  const dropdown    = document.getElementById('patientDropdown');
+  const hiddenId    = document.getElementById('patientId');
+  let timer;
+
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      clearTimeout(timer);
+      const q = searchInput.value.trim();
+      hiddenId.value = '';
+      if (q.length < 2) { dropdown.classList.remove('open'); return; }
+
+      timer = setTimeout(() => {
+        fetch(`/search_patients?q=${encodeURIComponent(q)}`)
+          .then(r => r.json())
+          .then(list => {
+            dropdown.innerHTML = '';
+            if (!list.length) {
+              dropdown.innerHTML = '<div class="patient-opt" style="color:#8faeb5;cursor:default;">No patients found</div>';
+            } else {
+              list.forEach(p => {
+                const el = document.createElement('div');
+                el.className = 'patient-opt';
+                el.innerHTML = `
+                  <i class="fas fa-user-circle" style="color:#c4d5d9;font-size:15px;"></i>
+                  <div>
+                    <div class="patient-opt-name">${p.full_name}</div>
+                    <div class="patient-opt-meta">${p.purok} &bull; ${p.gender} &bull; DOB: ${p.birth_date}</div>
+                  </div>`;
+                el.addEventListener('click', () => {
+                  searchInput.value = p.full_name;
+                  hiddenId.value    = p.id;
+                  dropdown.classList.remove('open');
+                });
+                dropdown.appendChild(el);
+              });
+            }
+            dropdown.classList.add('open');
+          })
+          .catch(() => {});
+      }, 260);
+    });
+
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.patient-search-wrap')) dropdown.classList.remove('open');
+    });
+  }
+
+  /* ── VACCINE "OTHER" TOGGLE ──────────────── */
+  const vaccSel   = document.getElementById('vaccineSelect');
+  const otherGrp  = document.getElementById('otherVaxGroup');
+  const otherInp  = document.getElementById('otherVaxInput');
+  if (vaccSel) {
+    vaccSel.addEventListener('change', () => {
+      const isOther = vaccSel.value === '__other__';
+      otherGrp.style.display = isOther ? 'flex' : 'none';
+      otherInp.required = isOther;
+    });
+  }
+});
+
+/* ── MODAL CONTROLS ─────────────────────────── */
+function openModal() {
+  document.getElementById('schedModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  document.getElementById('schedModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.getElementById('schedModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+/* ── FORM SUBMISSION ─────────────────────────── */
+function submitSched() {
+  const pid  = document.getElementById('patientId').value;
+  const vacc = document.getElementById('vaccineSelect').value;
+  const dt   = document.getElementById('schedDate').value;
+
+  if (!pid)  { alert('Please select a patient.'); return; }
+  if (!vacc) { alert('Please select a vaccine.'); return; }
+  if (!dt)   { alert('Please choose a scheduled date.'); return; }
+
+  // If "Other", swap name before submit
+  if (vacc === '__other__') {
+    const other = document.getElementById('otherVaxInput').value.trim();
+    if (!other) { alert('Please specify the vaccine name.'); return; }
+    const real = document.createElement('input');
+    real.type = 'hidden'; real.name = 'vaccine_name'; real.value = other;
+    document.getElementById('schedForm').appendChild(real);
+    document.getElementById('vaccineSelect').name = '_vax_hidden';
+  }
+
+  document.getElementById('schedForm').submit();
+}
+</script>
+
+{% endblock %}

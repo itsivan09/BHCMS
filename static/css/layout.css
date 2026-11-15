@@ -1,0 +1,67 @@
+/* Navbar Styling */
+.navbar {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
+    box-shadow: var(--shadow-md);
+    padding: 1rem 0;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.navbar-user {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 30px;
+    padding: 5px 15px;
+}
+
+.navbar-user-logo {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px;
+    max-width: 18px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    vertical-align: middle;
+    display: inline-block;
+}
+
+/* Dashboard Grid */
+.dashboard-container {
+    padding: 2rem 0;
+}
+
+.stat-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* --- Theme Toggle Animation --- */
+#themeIcon {
+    transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Bouncy effect */
+    display: inline-block;
+}
+
+/* The class JavaScript will add temporarily to trigger the spin */
+.spin-animation {
+    transform: rotate(360deg) scale(1.2); /* Spin and slightly enlarge */
+}
+
+/* Optional: Hover effect */
+#themeIcon:hover {
+    transform: scale(1.1);
+}

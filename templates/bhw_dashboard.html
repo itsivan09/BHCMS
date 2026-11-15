@@ -1,0 +1,651 @@
+{% extends "base.html" %}
+
+{% block title %}BHW Dashboard - BHCMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Dashboard Specific Styles */
+    .stat-card {
+        background: white;
+        border: none;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: var(--card-shadow);
+        transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 100%;
+        cursor: pointer;
+    }
+
+    .card-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        height: 100%;
+    }
+
+    .card-link:hover .stat-card {
+        transform: translateY(-5px);
+        box-shadow: var(--hover-shadow);
+        background-color: #f8f9fa;
+    }
+
+    .stat-content h6 {
+        color: #888;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .stat-content .stat-number {
+        color: var(--secondary-color);
+        font-weight: 700;
+        font-size: 2rem;
+        margin: 0;
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+
+    .bg-primary-soft { background-color: rgba(14, 124, 134, 0.1); color: var(--primary-color); }
+    .bg-info-soft { background-color: rgba(52, 152, 219, 0.1); color: #3498db; }
+    .bg-danger-soft { background-color: rgba(231, 76, 60, 0.1); color: #e74c3c; }
+    .bg-success-soft { background-color: rgba(46, 204, 113, 0.1); color: #2ecc71; }
+
+    .dashboard-card {
+        background: white;
+        border-radius: 15px;
+        border: none;
+        box-shadow: var(--card-shadow);
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .card-header-custom {
+        padding: 20px 25px;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+    }
+
+    .card-header-custom h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--secondary-color);
+        margin: 0;
+    }
+
+    .card-body-custom { padding: 25px; }
+    
+    .clickable-row {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    .clickable-row:hover {
+        background-color: #f1f3f5 !important;
+    }
+
+    /* BMI Result Box Style */
+    .bmi-result-box {
+        transition: all 0.3s ease;
+        border-left: 5px solid transparent;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">BHW Dashboard</h2>
+            <p class="text-muted mb-0">Welcome back, {{ current_user.full_name }}</p>
+        </div>
+        <div>
+            <span class="badge bg-success rounded-pill px-3 py-2 d-flex align-items-center">
+                <i class="fas fa-check-circle me-1"></i> Active
+            </span>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-12 col-md-6 col-xl-3">
+            <a href="{{ url_for('household_profile') }}" class="card-link">
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <h6>Households</h6>
+                        <p class="stat-number">{{ household_count }}</p>
+                    </div>
+                    <div class="stat-icon bg-primary-soft"><i class="fas fa-home"></i></div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="stat-card" data-bs-toggle="modal" data-bs-target="#optModal">
+                <div class="stat-content">
+                    <h6>OPT Records</h6>
+                    <p class="stat-number">{{ opt_count }}</p>
+                </div>
+                <div class="stat-icon bg-info-soft"><i class="fas fa-scale-balanced"></i></div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="stat-card">
+                <div class="stat-content">
+                    <h6>Follow-ups</h6>
+                    <p class="stat-number">{{ followup_count }}</p>
+                </div>
+                <div class="stat-icon bg-danger-soft"><i class="fas fa-notes-medical"></i></div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+            <a href="{{ url_for('household_profile') }}" class="card-link">
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <h6>Puroks Covered</h6>
+                        <p class="stat-number">{{ purok_stats|length }}</p>
+                    </div>
+                    <div class="stat-icon bg-success-soft"><i class="fas fa-map-marked-alt"></i></div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="dashboard-card">
+                <div class="card-header-custom">
+                    <i class="fas fa-chart-pie text-primary me-2"></i>
+                    <h3>Household Profiling by Purok</h3>
+                </div>
+                <div class="card-body-custom">
+                    {% if purok_stats %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Purok / Zone</th>
+                                        <th class="text-center">Households</th>
+                                        <th class="text-center">Members</th>
+                                        <th class="text-end">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for purok, stats in purok_stats.items() %}
+                                    <tr class="clickable-row" onclick="window.location='{{ url_for('household_profile') }}'">
+                                        <td class="fw-bold">{{ purok }}</td>
+                                        <td class="text-center">{{ stats.households }}</td>
+                                        <td class="text-center">{{ stats.members }}</td>
+                                        <td class="text-end">
+                                            <span class="badge bg-primary-soft text-primary">Active</span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No household profiles found.</p>
+                            <a href="{{ url_for('household_profile') }}" class="btn btn-outline-primary btn-sm">Create Profile</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="dashboard-card">
+                <div class="card-header-custom">
+                    <i class="fas fa-exclamation-circle text-danger me-2"></i>
+                    <h3>Nutrition Follow-up</h3>
+                </div>
+                <div class="card-body-custom p-0">
+                    {% if malnourished_children %}
+                        <div class="list-group list-group-flush">
+                            {% for record in malnourished_children %}
+                            <a href="{{ url_for('operation_timbang_history', patient_id=record.patient.id) }}" class="list-group-item list-group-item-action p-3">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1 fw-bold">{{ record.patient.full_name }}</h6>
+                                    <span class="badge bg-danger-soft text-danger">{{ record.nutritional_status }}</span>
+                                </div>
+                                <p class="mb-1 small text-muted">Measured: {{ record.measurement_date.strftime('%b %d') }}</p>
+                                <small>BMI: {{ record.bmi }} <span class="text-primary ms-2"><i class="fas fa-arrow-right"></i> Check History</span></small>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center p-5">
+                            <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                            <p class="text-muted mb-0">No urgent follow-ups needed.</p>
+                            <p class="small text-muted">Great work!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-header bg-white py-3">
+            <div class="row align-items-center g-2">
+                <div class="col-md-3">
+                    <h5 class="mb-0 text-primary fw-bold"><i class="fas fa-list-alt me-2"></i>Master List</h5>
+                </div>
+                
+                <div class="col-md-9">
+                    <div class="d-flex gap-2 justify-content-md-end">
+                        
+                        <select id="purokFilter" class="form-select form-select-sm" style="max-width: 150px; background-color: #f8f9fa;">
+                            <option value="">All Zones</option>
+                            {% for zone in ['Zone 1A-Danao', 'Zone 1B-Mother of Devine Mercy', 'Zone 2-Danao', 'Zone 3-Labapo', 'Zone 4-Centro', 'Zone 5-Mamis', 'Zone 6-Tuling', 'Zone 7-Camagon', 'Zone 8-Saguing', 'Zone 9-Camingawan'] %}
+                                <option value="{{ zone }}">{{ zone }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <select id="statusFilter" class="form-select form-select-sm" style="max-width: 150px; background-color: #f8f9fa;">
+                            <option value="">All Statuses</option>
+                            <option value="Normal">Normal</option>
+                            <option value="Underweight">Underweight</option>
+                            <option value="Overweight">Overweight</option>
+                        </select>
+
+                        <div class="input-group input-group-sm" style="max-width: 250px;">
+                            <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
+                            <input type="text" id="optSearch" class="form-control border-start-0 bg-light" placeholder="Search name...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="masterTable">
+                    <thead class="bg-light text-uppercase small text-muted">
+                        <tr>
+                            <th class="ps-4">Date Measured</th>
+                            <th>Child Name / Purok</th>
+                            <th>Age / Gender</th>
+                            <th>Weight / Height</th>
+                            <th>BMI</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="optTableBody">
+                        {% for record in opt_records %}
+                        <tr class="record-row" 
+                            data-purok="{{ record.patient.purok }}" 
+                            data-status="{% if 'Underweight' in record.nutritional_status %}Underweight{% elif 'Overweight' in record.nutritional_status %}Overweight{% else %}Normal{% endif %}">
+                            
+                            <td class="ps-4 text-muted small fw-bold">{{ record.measurement_date.strftime('%b %d, %Y') }}</td>
+                            
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle bg-light text-primary me-2 rounded-circle d-flex align-items-center justify-content-center" style="width:32px; height:32px;">
+                                        <i class="fas fa-child"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark">{{ record.patient.full_name }}</div>
+                                        <span class="badge bg-light text-secondary border fw-normal" style="font-size: 0.7rem;">{{ record.patient.purok }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <div class="small fw-bold">{{ record.patient.age }} yrs</div>
+                                <small class="text-muted">{{ record.patient.gender }}</small>
+                            </td>
+                            
+                            <td>
+                                <div>{{ record.weight_kg }} kg</div>
+                                <small class="text-muted">{{ record.height_cm }} cm</small>
+                            </td>
+                            
+                            <td>
+                                <span class="fw-bold" style="color: {% if record.bmi < 13.5 %}#d39e00{% elif record.bmi > 19 %}#dc3545{% else %}#198754{% endif %};">
+                                    {{ "%.2f"|format(record.bmi) if record.bmi else '--' }}
+                                </span>
+                            </td>
+                            
+                            <td>
+                                {% if record.nutritional_status == 'Normal' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2">Normal</span>
+                                {% elif 'Underweight' in record.nutritional_status %}
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2">Underweight</span>
+                                {% else %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2">{{ record.nutritional_status }}</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="text-end pe-4">
+                                <a href="{{ url_for('operation_timbang_history', patient_id=record.patient_id) }}" class="btn btn-sm btn-light text-primary border hover-shadow" title="View History">
+                                    <i class="fas fa-history"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr id="noRecordsRow">
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="fas fa-folder-open fa-3x mb-3 opacity-25"></i>
+                                <p>No measurement records found.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                        <tr id="noMatchRow" style="display: none;">
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                No records match your filters.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="optModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold"><i class="fas fa-child me-2"></i>New Child Measurement</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form action="{{ url_for('operation_timbang') }}" method="POST" id="optModalForm">
+                <div class="modal-body p-4">
+                    <h6 class="text-muted text-uppercase small fw-bold mb-3">Child Information</h6>
+                    <div class="row g-3 mb-3">
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Full Name</label>
+                            <input type="hidden" name="full_name" id="opt_modal_full_name" required>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <input type="text" id="opt_modal_last_name" class="form-control" placeholder="Last Name" required pattern="[A-ZÑ][a-zñ]+( [A-ZÑ][a-zñ]+)*" title="Last Name must be capitalized.">
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="text" id="opt_modal_first_name" class="form-control" placeholder="First Name" required pattern="[A-ZÑ][a-zñ]+( [A-ZÑ][a-zñ]+)*" title="First Name must be capitalized.">
+                                </div>
+                                <div class="col-md-8">
+                                    <input type="text" id="opt_modal_second_name" class="form-control" placeholder="Second Name (optional)" pattern="[A-ZÑ][a-zñ]+( [A-ZÑ][a-zñ]+)*" title="Second Name must be capitalized.">
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="text" id="opt_modal_middle_initial" class="form-control text-uppercase" placeholder="N/A" maxlength="3" pattern="([A-Z]|N/A)" title="Enter one capital letter or N/A." list="middleInitialOptionsOptModal">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Birth Date</label>
+                            <input type="date" name="birth_date" id="opt_modal_birth_date" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Gender</label>
+                            <select name="gender" class="form-select" required>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Purok / Zone</label>
+                            <select name="purok" class="form-select" required>
+                                {% for zone in ['Zone 1A-Danao', 'Zone 1B-Mother of Devine Mercy', 'Zone 2-Danao', 'Zone 3-Labapo', 'Zone 4-Centro', 'Zone 5-Mamis', 'Zone 6-Tuling', 'Zone 7-Camagon', 'Zone 8-Saguing', 'Zone 9-Camingawan'] %}
+                                    <option value="{{ zone }}">{{ zone }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <hr class="text-muted opacity-25">
+
+                    <h6 class="text-muted text-uppercase small fw-bold mb-3">Vital Measurements</h6>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-primary">Weight (kg)</label>
+                            <div class="input-group">
+                                <input type="number" step="0.01" class="form-control form-control-lg" id="modal_weight" name="weight" required placeholder="0.00">
+                                <span class="input-group-text">kg</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-primary">Height (cm)</label>
+                            <div class="input-group">
+                                <input type="number" step="0.1" class="form-control form-control-lg" id="modal_height" name="height" required placeholder="0.0">
+                                <span class="input-group-text">cm</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="modal-bmi-result" class="bmi-result-box p-3 rounded mb-3 bg-light text-center" style="display: none;">
+                        </div>
+
+                    <div class="mb-2">
+                        <label class="form-label">Notes / Observations</label>
+                        <textarea name="notes" id="modal_notes" class="form-control" rows="2" placeholder="Optional notes..."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success px-4"><i class="fas fa-save me-2"></i>Save Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<datalist id="middleInitialOptionsOptModal">
+    <option value="N/A"></option>
+</datalist>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. SEARCH & FILTER LOGIC
+    const searchInput = document.getElementById('optSearch');
+    const purokFilter = document.getElementById('purokFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const tableRows = document.querySelectorAll('.record-row');
+    const noMatchRow = document.getElementById('noMatchRow');
+
+    function filterTable() {
+        const searchText = searchInput.value.toLowerCase();
+        const selectedPurok = purokFilter.value;
+        const selectedStatus = statusFilter.value;
+        let visibleCount = 0;
+
+        tableRows.forEach(row => {
+            const nameText = row.innerText.toLowerCase();
+            const rowPurok = row.getAttribute('data-purok');
+            const rowStatus = row.getAttribute('data-status');
+
+            const matchesSearch = nameText.includes(searchText);
+            // "includes" allows matching partial strings
+            const matchesPurok = selectedPurok === "" || rowPurok.includes(selectedPurok); 
+            const matchesStatus = selectedStatus === "" || rowStatus === selectedStatus;
+
+            if (matchesSearch && matchesPurok && matchesStatus) {
+                row.style.display = "";
+                visibleCount++;
+            } else {
+                row.style.display = "none";
+            }
+        });
+
+        // Toggle "No Match" row
+        if (visibleCount === 0 && tableRows.length > 0) {
+            noMatchRow.style.display = "";
+        } else {
+            noMatchRow.style.display = "none";
+        }
+    }
+
+    if(searchInput) {
+        searchInput.addEventListener('keyup', filterTable);
+        purokFilter.addEventListener('change', filterTable);
+        statusFilter.addEventListener('change', filterTable);
+    }
+
+    // 2. LIVE BMI CALCULATOR FOR MODAL (RESTORED)
+    const modalWeight = document.getElementById('modal_weight');
+    const modalHeight = document.getElementById('modal_height');
+    const modalResult = document.getElementById('modal-bmi-result');
+    const modalNotes = document.getElementById('modal_notes');
+    const optModalBirthDate = document.getElementById('opt_modal_birth_date');
+
+    if (optModalBirthDate) {
+        optModalBirthDate.setAttribute('max', new Date().toISOString().split('T')[0]);
+    }
+
+    function updateModalBMI() {
+        const w = parseFloat(modalWeight.value);
+        const h_cm = parseFloat(modalHeight.value);
+
+        if (w > 0 && h_cm > 0) {
+            // Child Logic: Convert cm to meters
+            const h_m = h_cm / 100;
+            const bmi = w / (h_m * h_m);
+            const bmiFixed = bmi.toFixed(2);
+            
+            let status = "Normal";
+            let colorClass = "alert-success"; // Green
+            let colorCode = "#198754"; 
+
+            // Simplified Child Standards
+            if (bmi < 13.5) {
+                status = "At Risk (Underweight)";
+                colorClass = "alert-warning"; // Yellow
+                colorCode = "#ffc107";
+            } else if (bmi > 19) {
+                status = "Overweight";
+                colorClass = "alert-danger"; // Red
+                colorCode = "#dc3545"; 
+            }
+
+            // Show Result
+            modalResult.style.display = 'block';
+            modalResult.className = `bmi-result-box p-3 rounded mb-3 ${colorClass}`;
+            modalResult.style.borderLeftColor = colorCode;
+            modalResult.style.backgroundColor = colorClass === "alert-success" ? "#d1e7dd" : (colorClass === "alert-warning" ? "#fff3cd" : "#f8d7da");
+            
+            modalResult.innerHTML = `
+                <h5 class="mb-1 fw-bold"><i class="fas fa-calculator me-2"></i>BMI: ${bmiFixed}</h5>
+                <div class="fw-bold">${status}</div>
+            `;
+            
+            // Auto-fill notes
+            modalNotes.value = `System Assessment: ${status} (BMI ${bmiFixed})`;
+        } else {
+            modalResult.style.display = 'none';
+        }
+    }
+
+    if(modalWeight && modalHeight) {
+        modalWeight.addEventListener('input', updateModalBMI);
+        modalHeight.addEventListener('input', updateModalBMI);
+    }
+
+    function titleCaseWords(value) {
+        return value
+            .toLowerCase()
+            .split(' ')
+            .filter(part => part.trim() !== '')
+            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+            .join(' ');
+    }
+
+    const optModalForm = document.getElementById('optModalForm');
+    const optLast = document.getElementById('opt_modal_last_name');
+    const optFirst = document.getElementById('opt_modal_first_name');
+    const optSecond = document.getElementById('opt_modal_second_name');
+    const optMiddle = document.getElementById('opt_modal_middle_initial');
+    const optFull = document.getElementById('opt_modal_full_name');
+
+    [optLast, optFirst, optSecond].forEach(el => {
+        if (!el) return;
+        el.addEventListener('input', function() {
+            this.value = this.value.replace(/[^A-Za-zÑñ\s]/g, '');
+        });
+        el.addEventListener('blur', function() {
+            this.value = titleCaseWords(this.value);
+        });
+    });
+
+    if (optMiddle) {
+        optMiddle.addEventListener('input', function() {
+            const raw = this.value.toUpperCase().replace(/[^A-Z\/]/g, '');
+            if (raw === 'N' || raw === 'N/' || raw === 'N/A') {
+                this.value = raw === 'N' ? 'N' : (raw === 'N/' ? 'N/' : 'N/A');
+            } else {
+                this.value = raw.replace(/[^A-Z]/g, '').slice(0, 1);
+            }
+        });
+        optMiddle.addEventListener('blur', function() {
+            const clean = this.value.trim().toUpperCase();
+            if (clean === 'NA' || clean === 'N/A') {
+                this.value = 'N/A';
+            }
+        });
+    }
+
+    if (optModalForm) {
+        optModalForm.addEventListener('submit', function(e) {
+            const lastName = titleCaseWords((optLast?.value || '').trim());
+            const firstName = titleCaseWords((optFirst?.value || '').trim());
+            const secondName = titleCaseWords((optSecond?.value || '').trim());
+
+            const rawMiddle = (optMiddle?.value || '').trim().toUpperCase();
+            let middleInitial = '';
+            if (rawMiddle === 'N/A' || rawMiddle === 'NA') {
+                middleInitial = 'N/A';
+            } else {
+                middleInitial = rawMiddle.replace(/[^A-Z]/g, '').slice(0, 1);
+            }
+
+            if (!lastName || !firstName) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+
+            const hasSecond = !!secondName;
+            const hasMiddleInitialLetter = !!middleInitial && middleInitial !== 'N/A';
+            if (hasSecond && !hasMiddleInitialLetter) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+
+            if (!hasSecond && hasMiddleInitialLetter) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+
+            optLast.value = lastName;
+            optFirst.value = firstName;
+            optSecond.value = secondName;
+            optMiddle.value = middleInitial;
+            optFull.value = hasSecond
+                ? `${lastName} - ${firstName} - ${secondName} - ${middleInitial}.`
+                : `${lastName} - ${firstName}`;
+        });
+    }
+});
+</script>
+{% endblock %}

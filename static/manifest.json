@@ -1,0 +1,24 @@
+{
+  "short_name": "BHCMS Mobile",
+  "name": "Barangay Patag Health Center Management System",
+  "icons": [
+    {
+      "src": "/static/images/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/images/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#0e7c86",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "categories": ["health", "medical", "management"]
+}

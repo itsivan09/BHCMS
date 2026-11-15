@@ -1,0 +1,781 @@
+{% extends "base.html" %}
+
+{% block title %}Maternal Health Tracker - BHCMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4" style="background-color: #f8f9fa; min-height: 100vh;">
+    
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold text-gray-800 mb-1">
+                <i class="fas fa-baby-carriage text-pink me-2"></i>Prenatal Care Tracker
+            </h1>
+            <p class="text-muted mb-0 small">Monitor pregnancy progress, EDD, and risk factors.</p>
+        </div>
+        <div class="d-flex gap-2 mt-3 mt-md-0">
+            <button type="button" class="btn btn-white border shadow-sm text-muted bg-white" onclick="window.print()">
+                <i class="fas fa-print me-2"></i>Export List
+            </button>
+            <button type="button" class="btn btn-pink shadow-sm text-white" data-bs-toggle="modal" data-bs-target="#enrollPrenatalModal">
+                <i class="fas fa-plus-circle me-2"></i>New Enrollment
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 stat-card border-start-danger">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="icon-square bg-danger-subtle text-danger rounded-3 me-3">
+                            <i class="fas fa-heart-pulse"></i>
+                        </div>
+                        <span class="text-uppercase fw-bold text-muted small spacing-1">High Risk</span>
+                    </div>
+                    <div class="d-flex align-items-end">
+                        <h2 class="mb-0 fw-bold text-dark me-2">{{ high_risk_count }}</h2>
+                        <small class="text-muted mb-1">active cases</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 stat-card border-start-warning">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="icon-square bg-warning-subtle text-warning rounded-3 me-3">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <span class="text-uppercase fw-bold text-muted small spacing-1">Near Term</span>
+                    </div>
+                    <div class="d-flex align-items-end">
+                        <h2 class="mb-0 fw-bold text-dark me-2">{{ near_term_count }}</h2>
+                        <small class="text-muted mb-1">due < 30 days</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 stat-card border-start-primary">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="icon-square bg-primary-subtle text-primary rounded-3 me-3">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <span class="text-uppercase fw-bold text-muted small spacing-1">Total Active</span>
+                    </div>
+                    <div class="d-flex align-items-end">
+                        <h2 class="mb-0 fw-bold text-dark me-2">{{ prenatal_records|length }}</h2>
+                        <small class="text-muted mb-1">mothers</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white py-3 border-0">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group input-group-solid">
+                        <span class="input-group-text bg-light border-0 ps-3"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" id="prenatalSearch" class="form-control bg-light border-0" placeholder="Search patient name...">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive" style="min-height: 250px;">
+            <table class="table table-hover align-middle mb-0" id="prenatalTable">
+                <thead class="bg-light">
+                    <tr class="text-uppercase text-muted small fw-bold letter-spacing-1">
+                        <th class="ps-4 py-3" style="width: 25%;">Patient</th>
+                        <th class="py-3" style="width: 15%;">G-P Score</th>
+                        <th class="py-3" style="width: 25%;">Progress (AOG)</th>
+                        <th class="py-3 text-center" style="width: 10%;">Risk Level</th>
+                        <th class="text-end pe-4 py-3" style="width: 10%;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="border-top-0">
+                    {% for record in prenatal_records %}
+                    {% set display_weeks = record.current_weeks if record.current_weeks is defined else record.current_weeks_of_pregnancy() %}
+                    {% set progress_pct = ((display_weeks / 40) * 100)|int %}
+                    {% set progress_width = progress_pct if progress_pct <= 100 else 100 %}
+                    <tr class="{{ 'bg-danger-subtle-row' if record.is_high_risk else '' }}">
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-initials bg-pink text-white shadow-sm me-3">
+                                    {{ record.patient.full_name[:2].upper() }}
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-bold text-dark">{{ record.patient.full_name }}</h6>
+                                    <small class="text-muted">Age: {{ record.patient.age }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">G{{ record.gravidity }} P{{ record.parity }}</span>
+                        </td>
+                        <td class="pe-4">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small class="fw-bold text-dark">{{ display_weeks }} Weeks</small>
+                                <small class="text-muted">EDD: {{ record.estimated_delivery_date.strftime('%b %d, %Y') }}</small>
+                            </div>
+                            <div class="progress" style="height: 6px; background-color: #e9ecef;">
+                                  <div class="progress-bar bg-pink rounded-pill prenatal-progress" role="progressbar"
+                                      data-progress="{{ progress_width }}"
+                                      style="width: 0%;"
+                                     aria-valuenow="{{ display_weeks }}" aria-valuemin="0" aria-valuemax="40">
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            {% if record.is_high_risk %}
+                                <span class="badge bg-danger-soft text-danger border border-danger-subtle px-3 py-2 rounded-pill">
+                                    <i class="fas fa-exclamation-circle me-1"></i>High Risk
+                                </span>
+                            {% else %}
+                                <span class="badge bg-success-soft text-success border border-success-subtle px-3 py-2 rounded-pill">
+                                    Normal
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="dropdown">
+                                <button class="btn btn-icon btn-light btn-sm" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end border-0 shadow" style="z-index: 9999;">
+                                    <li><a class="dropdown-item" href="{{ url_for('consultations.add_consultation', patient_id=record.patient.id) }}"><i class="fas fa-file-medical me-2 text-primary"></i>Checkup / Vitals</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="POST" action="{{ url_for('mark_delivered', record_id=record.id) }}" class="d-inline" onsubmit="return confirm('Are you sure this patient has given birth? This will clear her pregnancy status.')">
+                                            <button type="submit" class="dropdown-item text-danger border-0 bg-transparent w-100 text-start">
+                                                <i class="fas fa-check me-2"></i>Mark Delivered
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if not prenatal_records %}
+        <div class="text-center py-5">
+            <div class="mb-3 text-muted opacity-25">
+                <i class="fas fa-clipboard-list fa-3x"></i>
+            </div>
+            <h6 class="fw-bold text-dark">No Active Pregnancies</h6>
+            <p class="text-muted small">Enroll a patient to start tracking.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="modal fade" id="enrollPrenatalModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-pink text-white border-0">
+                <h5 class="modal-title fw-bold"><i class="fas fa-baby me-2"></i>New Pregnancy Enrollment</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('enroll_prenatal') }}" class="needs-validation" novalidate id="enrollForm">
+                <div class="modal-body p-4 bg-light">
+
+                    <input type="hidden" name="patient_id" id="patientIdInput">
+                    <input type="hidden" name="patient_name" id="patientNameInput">
+                    <script id="prenatalPatientData" type="application/json">
+                    [{% for p in eligible_patients %}{"id":"{{ p.id }}","name":"{{ p.full_name | replace('"','&quot;') }}","age":"{{ p.age }}","purok":"{{ p.purok or '' }}","contact":"{{ p.contact_number or '' }}","email":"{{ p.email or '' }}"}{% if not loop.last %},{% endif %}{% endfor %}]
+                    </script>
+
+                    <div class="card p-3 border-0 shadow-sm mb-3">
+                        <label class="form-label fw-bold text-uppercase text-muted small">Select Patient</label>
+
+                        <div style="position:relative;">
+                            <div class="input-group">
+                                <button type="button" class="input-group-text bg-white border-end-0" id="searchPrenatalPatientBtn" aria-label="Focus patient search" style="cursor:pointer;">
+                                    <i class="fas fa-search text-primary"></i>
+                                </button>
+                                <input type="text" class="form-control border-start-0" id="prenatalPatientSearch"
+                                       placeholder="Search female patient..." autocomplete="off">
+                            </div>
+                            <div id="prenatalPatientDropdown"
+                                 style="display:none; position:absolute; left:0; right:0; top:100%; z-index:1060;
+                                        background:#fff; border:1px solid #c9d8f0; border-top:none;
+                                        border-radius:0 0 10px 10px; max-height:210px; overflow-y:auto;
+                                        box-shadow:0 8px 24px rgba(0,0,0,0.12);">
+                                <div id="prenatalPatientListItems"></div>
+                                <div id="prenatalAddNewRow" role="button" tabindex="0"
+                                     style="display:none; padding:11px 16px; cursor:pointer; border-top:2px solid #ffc107; background:#fffdf0;"
+                                     onmouseenter="this.style.background='#fff3cd'"
+                                     onmouseleave="this.style.background='#fffdf0'">
+                                    <i class="fas fa-user-plus text-warning me-2"></i>
+                                    <span class="fw-semibold" style="color:#856404;">
+                                        Register "<span id="prenatalAddNewLabel"></span>" as new patient &amp; enroll
+                                    </span>
+                                </div>
+                                <div id="prenatalNoPatientMatch" style="display:none;"
+                                     class="px-3 py-2 text-center text-muted small fst-italic">
+                                    No matching registered patient found
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="prenatalSelectedPatientBadge" style="display:none; margin-top:10px;"></div>
+                        <div class="form-text">Select a female patient to enroll (includes pregnant & non-pregnant).</div>
+                    </div>
+
+                    <div id="prenatalNewPatientFields" class="card p-3 border border-warning bg-warning-subtle mb-3" style="display:none;">
+                        <p class="fw-semibold mb-2" style="color:#856404; font-size:.85rem;">
+                            <i class="fas fa-clipboard-list me-1"></i>
+                            Patient Registration — Required fields to create record
+                        </p>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm" id="prenatalNewLastName" placeholder="Last Name" pattern="[A-Za-zÑñ]+( [A-Za-zÑñ]+)*">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary mb-1">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm" id="prenatalNewFirstName" placeholder="First Name" pattern="[A-Za-zÑñ]+( [A-Za-zÑñ]+)*">
+                            </div>
+                            <div class="col-8">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Second Name <span class="text-muted">(optional)</span></label>
+                                <input type="text" class="form-control form-control-sm" id="prenatalNewSecondName" placeholder="Second Name" pattern="[A-Za-zÑñ]+( [A-Za-zÑñ]+)*">
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Middle Initial</label>
+                                <input type="text" class="form-control form-control-sm text-uppercase" id="prenatalNewMiddleInitial" placeholder="N/A" maxlength="3" pattern="([A-Z]|N/A)" list="middleInitialOptionsPrenatal">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Birth Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control form-control-sm" id="prenatalNewBirthDate" name="new_birth_date" max="{{ today }}">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Gender <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-sm" id="prenatalNewGender" name="new_gender">
+                                    <option value="Female" selected>Female</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Purok / Zone <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-sm" id="prenatalNewPurok" name="new_purok">
+                                    {% for purok in purok_choices %}
+                                    <option value="{{ purok }}">{{ purok }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Contact Number</label>
+                                <input type="tel" class="form-control form-control-sm" id="prenatalNewContact" name="new_contact_number"
+                                       placeholder="09171234567" maxlength="11"
+                                       oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,11);"
+                                       inputmode="numeric">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Email</label>
+                                <input type="email" class="form-control form-control-sm" id="prenatalNewEmail" name="new_email" placeholder="name@example.com">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-3 border-0 shadow-sm mb-3">
+                        <label class="form-label fw-bold text-uppercase text-muted small">Clinical Data</label>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small">LMP Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" name="lmp" id="lmpInput" required>
+                                <div class="invalid-feedback" id="lmpError">Please enter a valid LMP date.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small">Estimated Delivery</label>
+                                <input type="date" class="form-control bg-light fw-bold text-primary" name="edd" id="eddOutput" readonly>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small">Gravida (Total) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="gravida" id="gravidaInput" value="1" min="1" max="20" required>
+                                <div class="invalid-feedback">Gravida must be at least 1.</div>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small">Para (Births) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="para" id="paraInput" value="0" min="0" max="20" required>
+                                <div class="invalid-feedback">Para cannot be negative.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-check form-switch p-3 bg-white rounded border shadow-sm border-danger-subtle">
+                        <input class="form-check-input ms-0 me-3" type="checkbox" id="highRiskCheck" name="is_high_risk" style="cursor: pointer;">
+                        <label class="form-check-label fw-bold text-danger cursor-pointer" for="highRiskCheck">
+                            Flag as High Risk Pregnancy
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-white">
+                    <button type="button" class="btn btn-light text-muted" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-pink text-white px-4 fw-bold shadow-sm" id="enrollSubmitBtn">Enroll Patient</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Theme Colors */
+    .text-pink { color: #d63384; }
+    .bg-pink { background-color: #d63384; }
+    .btn-pink { background-color: #d63384; border-color: #d63384; }
+    .btn-pink:hover { background-color: #c21b6c; border-color: #c21b6c; }
+    
+    /* Badges */
+    .bg-danger-soft { background-color: #fee2e2; }
+    .bg-success-soft { background-color: #dcfce7; }
+    
+    /* Utilities */
+    .icon-square {
+        width: 48px; height: 48px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.25rem;
+    }
+    .avatar-initials {
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 0.9rem;
+    }
+    .btn-icon {
+        width: 32px; height: 32px;
+        padding: 0; display: inline-flex;
+        align-items: center; justify-content: center; border-radius: 50%;
+    }
+    .letter-spacing-1 { letter-spacing: 0.5px; }
+    
+    /* Card borders */
+    .border-start-primary { border-left: 4px solid var(--primary) !important; }
+    .border-start-danger { border-left: 4px solid #dc3545 !important; }
+    .border-start-warning { border-left: 4px solid #ffc107 !important; }
+    
+    .bg-danger-subtle-row { background-color: rgba(220, 53, 69, 0.05); }
+</style>
+
+<datalist id="middleInitialOptionsPrenatal">
+    <option value="N/A"></option>
+</datalist>
+
+<script>
+    document.querySelectorAll('.prenatal-progress').forEach((bar) => {
+        const progress = parseInt(bar.getAttribute('data-progress') || '0', 10);
+        const safeProgress = Number.isNaN(progress) ? 0 : Math.min(100, Math.max(0, progress));
+        bar.style.width = `${safeProgress}%`;
+    });
+
+    // 1. Search Logic
+    document.getElementById('prenatalSearch').addEventListener('keyup', function() {
+        let searchQuery = this.value.toLowerCase();
+        let tableRows = document.querySelectorAll('#prenatalTable tbody tr');
+        tableRows.forEach(row => {
+            // Check if row has data (skip empty state row)
+            if(row.querySelector('td')) {
+                let rowText = row.innerText.toLowerCase();
+                row.style.display = rowText.includes(searchQuery) ? '' : 'none';
+            }
+        });
+    });
+
+    // 2. EDD Calculation (Naegele's Rule: LMP + 280 days)
+    const allPatients = JSON.parse(document.getElementById('prenatalPatientData').textContent);
+    const patientSearchInput = document.getElementById('prenatalPatientSearch');
+    const patientSearchBtn = document.getElementById('searchPrenatalPatientBtn');
+    const patientDropdown = document.getElementById('prenatalPatientDropdown');
+    const patientListItems = document.getElementById('prenatalPatientListItems');
+    const addNewRow = document.getElementById('prenatalAddNewRow');
+    const addNewLabel = document.getElementById('prenatalAddNewLabel');
+    const noPatientMatch = document.getElementById('prenatalNoPatientMatch');
+    const selectedPatientBadge = document.getElementById('prenatalSelectedPatientBadge');
+    const patientIdInput = document.getElementById('patientIdInput');
+    const patientNameInput = document.getElementById('patientNameInput');
+    const newPatientFields = document.getElementById('prenatalNewPatientFields');
+    const newLastName = document.getElementById('prenatalNewLastName');
+    const newFirstName = document.getElementById('prenatalNewFirstName');
+    const newSecondName = document.getElementById('prenatalNewSecondName');
+    const newMiddleInitial = document.getElementById('prenatalNewMiddleInitial');
+    const newBirthDate = document.getElementById('prenatalNewBirthDate');
+    const newGender = document.getElementById('prenatalNewGender');
+    const lmpInput = document.getElementById('lmpInput');
+    const eddOutput = document.getElementById('eddOutput');
+    const gravidaInput = document.getElementById('gravidaInput');
+    const paraInput = document.getElementById('paraInput');
+    const submitBtn = document.getElementById('enrollSubmitBtn');
+    const lmpError = document.getElementById('lmpError');
+
+    // Set max date on LMP to today — browser will block future dates visually
+    const today = new Date();
+    const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
+    const todayStr = localDate.toISOString().split('T')[0];
+    if (lmpInput) lmpInput.setAttribute('max', todayStr);
+
+    function titleCaseWords(value) {
+        return value
+            .toLowerCase()
+            .split(' ')
+            .filter(part => part.trim() !== '')
+            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+            .join(' ');
+    }
+
+    function composeNewPatientName() {
+        const last = titleCaseWords((newLastName?.value || '').replace(/[^A-Za-zÑñ\s]/g, '').trim());
+        const first = titleCaseWords((newFirstName?.value || '').replace(/[^A-Za-zÑñ\s]/g, '').trim());
+        const second = titleCaseWords((newSecondName?.value || '').replace(/[^A-Za-zÑñ\s]/g, '').trim());
+        const rawMiddle = (newMiddleInitial?.value || '').trim().toUpperCase();
+        let middle = '';
+        if (rawMiddle === 'N/A' || rawMiddle === 'NA') {
+            middle = 'N/A';
+        } else {
+            middle = rawMiddle.replace(/[^A-Z]/g, '').slice(0, 1);
+        }
+
+        if (newLastName) newLastName.value = last;
+        if (newFirstName) newFirstName.value = first;
+        if (newSecondName) newSecondName.value = second;
+        if (newMiddleInitial) newMiddleInitial.value = middle;
+
+        if (!last || !first) return '';
+
+        if (second) {
+            return (middle && middle !== 'N/A')
+                ? `${last} - ${first} - ${second} - ${middle}.`
+                : `${last} - ${first} - ${second}`;
+        }
+
+        return `${last} - ${first}`;
+    }
+
+    function buildDropdown(query) {
+        const q = query.toLowerCase().trim();
+        const matches = q ? allPatients.filter(p => p.name.toLowerCase().includes(q)) : allPatients;
+        patientListItems.innerHTML = '';
+        matches.forEach((p) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'padding:10px 16px; cursor:pointer; border-bottom:1px solid #f0f0f0; transition:background .1s;';
+            row.innerHTML =
+                `<div style="font-weight:600; font-size:.9rem; color:#1a1a2e;">${p.name} (${p.age} yrs)</div>` +
+                (p.purok ? `<div style="font-size:.78rem; color:#6c757d;">${p.purok}</div>` : '');
+            row.addEventListener('mouseenter', () => row.style.background = '#f0f7ff');
+            row.addEventListener('mouseleave', () => row.style.background = '');
+            row.addEventListener('mousedown', e => { e.preventDefault(); pickExisting(p); });
+            patientListItems.appendChild(row);
+        });
+        noPatientMatch.style.display = (q && matches.length === 0) ? 'block' : 'none';
+        if (q) {
+            addNewLabel.textContent = query.trim();
+            addNewRow.style.display = 'block';
+        } else {
+            addNewRow.style.display = 'none';
+        }
+    }
+
+    function showDropdown() {
+        buildDropdown(patientSearchInput.value);
+        patientDropdown.style.display = 'block';
+    }
+
+    function hideDropdown() {
+        patientDropdown.style.display = 'none';
+    }
+
+    function renderBadge(name, sub, type) {
+        const isNew = type === 'new';
+        const borderColor = isNew ? '#ffc107' : '#198754';
+        const bgColor = isNew ? '#fffdf0' : '#f0fff4';
+        const iconClass = isNew ? 'fas fa-user-plus' : 'fas fa-check-circle';
+        const iconColor = isNew ? '#856404' : '#198754';
+        const labelColor = isNew ? '#856404' : '#155724';
+
+        selectedPatientBadge.style.display = 'block';
+        selectedPatientBadge.innerHTML =
+            `<div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border:1.5px solid ${borderColor}; border-radius:8px; background:${bgColor};">` +
+                `<div style="display:flex; align-items:center; gap:10px;">` +
+                    `<div style="width:36px; height:36px; border-radius:50%; background:${borderColor}20; display:flex; align-items:center; justify-content:center;">` +
+                        `<i class="${iconClass}" style="color:${iconColor}; font-size:.9rem;"></i>` +
+                    `</div>` +
+                    `<div>` +
+                        `<div style="font-weight:700; font-size:.95rem; color:#1a1a2e;">${name}</div>` +
+                        `<div style="font-size:.78rem; color:${labelColor};">${sub}</div>` +
+                    `</div>` +
+                `</div>` +
+                `<button type="button" id="clearPrenatalPatient" style="background:none; border:1px solid #ccc; border-radius:6px; padding:3px 10px; font-size:.78rem; color:#555; cursor:pointer; white-space:nowrap;">` +
+                    `<i class="fas fa-undo me-1"></i>Change` +
+                `</button>` +
+            `</div>`;
+
+        const clearButton = document.getElementById('clearPrenatalPatient');
+        if (clearButton) {
+            clearButton.addEventListener('click', clearSelection);
+        }
+    }
+
+    function pickExisting(patient) {
+        patientIdInput.value = patient.id;
+        patientNameInput.value = patient.name;
+        patientSearchInput.value = '';
+        hideDropdown();
+        renderBadge(patient.name, patient.purok || 'Registered patient', 'existing');
+        newPatientFields.style.display = 'none';
+        if (newLastName) newLastName.required = false;
+        if (newFirstName) newFirstName.required = false;
+        if (newBirthDate) newBirthDate.required = false;
+        if (newGender) newGender.required = false;
+        validateForm();
+    }
+
+    function updateNewPatientSelectionState() {
+        if (newPatientFields.style.display !== 'block') {
+            return false;
+        }
+
+        const composedName = composeNewPatientName();
+        const hasBirthDate = !!(newBirthDate && newBirthDate.value);
+        const hasGender = !!(newGender && newGender.value);
+        const ready = !!composedName && hasBirthDate && hasGender;
+
+        patientIdInput.value = '';
+        patientNameInput.value = composedName;
+        return ready;
+    }
+
+    function pickNew(name) {
+        patientIdInput.value = '';
+        patientNameInput.value = '';
+        patientSearchInput.value = '';
+        hideDropdown();
+        renderBadge('New patient', 'Complete name boxes below', 'new');
+        newPatientFields.style.display = 'block';
+
+        if (newLastName) newLastName.required = true;
+        if (newFirstName) newFirstName.required = true;
+        if (newBirthDate) newBirthDate.required = true;
+        if (newGender) newGender.required = true;
+
+        const parsed = (name || '').split(' - ').map(part => part.trim());
+        if (parsed.length === 4) {
+            if (newLastName) newLastName.value = parsed[0] || '';
+            if (newFirstName) newFirstName.value = parsed[1] || '';
+            if (newSecondName) newSecondName.value = parsed[2] || '';
+            if (newMiddleInitial) {
+                const parsedMiddle = (parsed[3] || '').replace('.', '').toUpperCase();
+                newMiddleInitial.value = (parsedMiddle === 'N/A' || parsedMiddle === 'NA') ? 'N/A' : parsedMiddle.slice(0, 1);
+            }
+        } else {
+            if (newLastName) newLastName.value = titleCaseWords(name || '');
+            if (newFirstName) newFirstName.value = '';
+            if (newSecondName) newSecondName.value = '';
+            if (newMiddleInitial) newMiddleInitial.value = '';
+        }
+
+        validateForm();
+    }
+
+    function clearSelection() {
+        patientIdInput.value = '';
+        patientNameInput.value = '';
+        patientSearchInput.value = '';
+        selectedPatientBadge.style.display = 'none';
+        selectedPatientBadge.innerHTML = '';
+        newPatientFields.style.display = 'none';
+
+        if (newLastName) { newLastName.value = ''; newLastName.required = false; }
+        if (newFirstName) { newFirstName.value = ''; newFirstName.required = false; }
+        if (newSecondName) newSecondName.value = '';
+        if (newMiddleInitial) newMiddleInitial.value = '';
+        if (newBirthDate) { newBirthDate.value = ''; newBirthDate.required = false; }
+        if (newGender) { newGender.value = 'Female'; newGender.required = false; }
+
+        patientSearchInput.classList.remove('is-valid', 'is-invalid');
+        validateForm();
+    }
+
+    // Central validation — returns true if all fields are valid
+    function validateForm() {
+        let valid = true;
+
+        const hasExistingPatient = !!patientIdInput.value;
+        const hasValidNewPatient = updateNewPatientSelectionState();
+        if (!hasExistingPatient && !hasValidNewPatient) {
+            patientSearchInput.classList.add('is-invalid');
+            valid = false;
+        } else {
+            patientSearchInput.classList.remove('is-invalid');
+            patientSearchInput.classList.add('is-valid');
+        }
+
+        // 2. LMP date: required + must not be in the future
+        const lmpVal = lmpInput ? lmpInput.value : '';
+        if (!lmpVal) {
+            lmpInput.classList.add('is-invalid');
+            lmpError.textContent = 'LMP date is required.';
+            valid = false;
+        } else if (lmpVal > todayStr) {
+            lmpInput.classList.add('is-invalid');
+            lmpError.textContent = 'LMP date cannot be in the future.';
+            valid = false;
+        } else {
+            lmpInput.classList.remove('is-invalid');
+            lmpInput.classList.add('is-valid');
+        }
+
+        // 3. Gravida: must be >= 1
+        const gravVal = parseInt(gravidaInput.value);
+        if (isNaN(gravVal) || gravVal < 1) {
+            gravidaInput.classList.add('is-invalid');
+            valid = false;
+        } else {
+            gravidaInput.classList.remove('is-invalid');
+            gravidaInput.classList.add('is-valid');
+        }
+
+        // 4. Para: must be >= 0 and <= Gravida
+        const paraVal = parseInt(paraInput.value);
+        if (isNaN(paraVal) || paraVal < 0) {
+            paraInput.classList.add('is-invalid');
+            valid = false;
+        } else if (!isNaN(gravVal) && paraVal > gravVal) {
+            paraInput.classList.add('is-invalid');
+            valid = false;
+        } else {
+            paraInput.classList.remove('is-invalid');
+            paraInput.classList.add('is-valid');
+        }
+
+        // Enable/disable submit button based on validity
+        if (valid) {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50');
+            submitBtn.title = '';
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50');
+            submitBtn.title = 'Please fix the errors above before enrolling.';
+        }
+
+        return valid;
+    }
+
+    // Run validation on every input change
+    if (lmpInput)     lmpInput.addEventListener('input', function() {
+        validateForm();
+        // Auto-calculate EDD when LMP changes and is valid
+        if (this.value && this.value <= todayStr) {
+            const lmp = new Date(this.value);
+            const edd = new Date(lmp.setDate(lmp.getDate() + 280));
+            const yyyy = edd.getFullYear();
+            const mm   = String(edd.getMonth() + 1).padStart(2, '0');
+            const dd   = String(edd.getDate()).padStart(2, '0');
+            eddOutput.value = `${yyyy}-${mm}-${dd}`;
+        } else {
+            eddOutput.value = '';
+        }
+    });
+    if (gravidaInput)  gravidaInput.addEventListener('input', validateForm);
+    if (paraInput)     paraInput.addEventListener('input', validateForm);
+
+    patientSearchInput.addEventListener('focus', showDropdown);
+    patientSearchInput.addEventListener('input', showDropdown);
+    addNewRow.addEventListener('mousedown', e => {
+        e.preventDefault();
+        pickNew(patientSearchInput.value.trim());
+    });
+    addNewRow.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            pickNew(patientSearchInput.value.trim());
+        }
+    });
+
+    document.addEventListener('click', e => {
+        if (!patientSearchInput.contains(e.target) && !patientDropdown.contains(e.target) && !patientSearchBtn.contains(e.target)) {
+            hideDropdown();
+        }
+    });
+
+    if (patientSearchBtn) {
+        patientSearchBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            patientSearchInput.focus();
+            showDropdown();
+        });
+    }
+
+    [newLastName, newFirstName, newSecondName].forEach(el => {
+        if (!el) return;
+        el.addEventListener('input', function () {
+            this.value = this.value.replace(/[^A-Za-zÑñ\s]/g, '');
+            validateForm();
+        });
+        el.addEventListener('blur', function () {
+            this.value = titleCaseWords(this.value);
+            validateForm();
+        });
+    });
+
+    if (newMiddleInitial) {
+        newMiddleInitial.addEventListener('input', function () {
+            const raw = this.value.toUpperCase().replace(/[^A-Z\/]/g, '');
+            if (raw === 'N' || raw === 'N/' || raw === 'N/A') {
+                this.value = raw === 'N' ? 'N' : (raw === 'N/' ? 'N/' : 'N/A');
+            } else {
+                this.value = raw.replace(/[^A-Z]/g, '').slice(0, 1);
+            }
+            validateForm();
+        });
+        newMiddleInitial.addEventListener('blur', function () {
+            const clean = this.value.trim().toUpperCase();
+            if (clean === 'NA' || clean === 'N/A') {
+                this.value = 'N/A';
+            }
+            validateForm();
+        });
+    }
+
+    [newBirthDate, newGender].forEach(el => {
+        if (!el) return;
+        el.addEventListener('change', validateForm);
+    });
+
+    // Reset form and re-validate when modal opens
+    document.getElementById('enrollPrenatalModal').addEventListener('show.bs.modal', function () {
+        document.getElementById('enrollForm').reset();
+
+        // Remove all validation classes
+        [lmpInput, gravidaInput, paraInput, patientSearchInput].forEach(el => {
+            if (el) { el.classList.remove('is-valid', 'is-invalid'); }
+        });
+
+        clearSelection();
+        if (eddOutput) eddOutput.value = '';
+
+        // Start with button disabled until user fills the form
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-50');
+        submitBtn.title = 'Please fill all required fields.';
+    });
+
+    // Final safety net: block submit if somehow invalid
+    document.getElementById('enrollForm').addEventListener('submit', function(e) {
+        if (newPatientFields.style.display === 'block') {
+            patientNameInput.value = composeNewPatientName();
+        }
+        if (!validateForm()) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
+</script>
+{% endblock %}

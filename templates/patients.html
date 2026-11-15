@@ -1,0 +1,781 @@
+{% extends "base.html" %}
+{% from '_macros.html' import action_buttons %}
+
+{% block title %}Manage Patients - BHCMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-2 mb-4">
+        <div>
+            <h2><i class="fas fa-users text-primary me-2"></i>Patient Master List</h2>
+            <p class="text-muted mb-0">Manage patient records and consultation history</p>
+        </div>
+        {% if current_user.role in ['BHW', 'Midwife', 'Admin'] %}
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPatientModal">
+            <i class="fas fa-plus me-1"></i> Add New Patient
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="fas fa-search"></i></span>
+                        <input type="text" id="searchInput" class="form-control" placeholder="Search by name...">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select id="purokFilter" class="form-select" onchange="filterTable()">
+                        <option value="">All Puroks</option>
+                        {% for purok in purok_choices %}
+                            <option value="{{ purok }}">{{ purok }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-outline-secondary w-100" onclick="clearSearch()">Clear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="patientTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col" class="ps-4">Full Name</th>
+                            <th scope="col">Age / Gender</th>
+                            <th scope="col">Purok</th>
+                            <th scope="col">Status</th>
+                            <th scope="col" class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="patientsTableBody">
+                        {% for patient in patients %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold">{{ patient.full_name.replace(' - ', ' ') }}</div>
+                                <small class="text-muted">ID: {{ patient.id }}</small>
+                            </td>
+                            <td>
+                                {{ patient.age }} yrs • 
+                                <span class="badge bg-light text-dark border">{{ patient.gender }}</span>
+                            </td>
+                            <td><span class="badge bg-info-light text-dark">{{ patient.purok }}</span></td>
+                            <td>
+                                {% if patient.is_pregnant %}
+                                    <span class="badge bg-pink text-dark" style="background-color: #ffc2d1;">Pregnant</span>
+                                {% else %}
+                                    <span class="badge bg-secondary text-white" style="opacity: 0.7;">Regular</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group patient-action-group">
+                                    {% set view_btn %}
+                                    <a href="{{ url_for('consultations.consultation_history', patient_id=patient.id) }}" class="btn btn-sm btn-info text-white" title="View Consultation History" aria-label="View consultation history"><i class="fas fa-file-medical"></i></a>
+                                    {% endset %}
+
+                                    {% set consult_btn %}
+                                    <a href="{{ url_for('consultations.add_consultation', patient_id=patient.id) }}" class="btn btn-sm btn-success" title="{% if current_user.role == 'BHW' %}Record Monitoring{% else %}New Checkup{% endif %}" aria-label="{% if current_user.role == 'BHW' %}Record monitoring{% else %}Create new checkup{% endif %}"><i class="fas fa-stethoscope"></i></a>
+                                    {% endset %}
+
+                                    {% set edit_btn %}
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-warning text-white"
+                                        onclick="openEditModalFromButton(this)"
+                                        data-patient-id="{{ patient.id }}"
+                                        data-full-name="{{ patient.full_name|e }}"
+                                        data-birth-date="{{ patient.birth_date.strftime('%Y-%m-%d') }}"
+                                        data-gender="{{ patient.gender|e }}"
+                                        data-purok="{{ patient.purok|e }}"
+                                        data-address="{{ (patient.address or '')|e }}"
+                                        data-email="{{ (patient.email or '')|e }}"
+                                        data-contact-number="{{ (patient.contact_number or '')|e }}"
+                                        data-is-pregnant="{{ 'true' if patient.is_pregnant else 'false' }}"
+                                        title="Edit"
+                                        aria-label="Edit patient"
+                                    ><i class="fas fa-edit"></i></button>
+                                    {{ consult_btn }}
+                                    {% endset %}
+
+                                    {# Show view and edit buttons to everyone #}
+                                    {{ view_btn|safe }}
+                                    {{ edit_btn|safe }}
+
+                                    {# Delete button — ONLY visible to Midwife and Admin #}
+                                    {% if current_user.role in ['Midwife', 'Admin'] %}
+                                    <form method="POST" action="{{ url_for('patients.delete_patient', patient_id=patient.id) }}" class="d-inline" data-patient-name="{{ patient.full_name|replace(' - ', ' ')|e }}" onsubmit="return confirmDeletePatient(this);">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Delete Patient" aria-label="Delete patient">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="fas fa-user-slash fa-2x mb-3 opacity-50"></i>
+                                <p>No patients found in the database.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div id="noResults" class="text-center py-4 text-muted" style="display: none;">
+                <p>No patients match your search.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addPatientModal" tabindex="-1" aria-labelledby="addPatientModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('patients.patients') }}" id="addPatientForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addPatientModalLabel">Register New Patient</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <input type="hidden" name="full_name" id="add_full_name" required>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label mb-1">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" id="add_last_name" class="form-control" placeholder="Last Name" required pattern="[A-Za-zÑñ]+( [A-Za-zÑñ]+)*" title="Use letters and spaces only.">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label mb-1">First Name <span class="text-danger">*</span></label>
+                                <input type="text" id="add_first_name" class="form-control" placeholder="First Name" required pattern="[A-Za-zÑñ]+( [A-Za-zÑñ]+)*" title="Use letters and spaces only.">
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label mb-1">Second Name <span class="text-muted">(optional)</span></label>
+                                <input type="text" id="add_second_name" class="form-control" placeholder="Second Name" pattern="[A-Za-zÑñ]+( [A-Za-zÑñ]+)*" title="Use letters and spaces only.">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label mb-1">Middle Initial</label>
+                                <input type="text" id="add_middle_initial" class="form-control text-uppercase" placeholder="N/A" maxlength="3" pattern="([A-Z]|N/A)" title="Enter one capital letter or N/A.">
+                            </div>
+                        </div>
+                        <div class="invalid-feedback">Enter Last and First Name. Second Name and M.I. are optional.</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Birth Date <span class="text-danger">*</span></label>
+                            <input type="date" name="birth_date" id="add_birth_date" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Gender <span class="text-danger">*</span></label>
+                            <select name="gender" id="add_gender" class="form-select" required>
+                                <option value="Female">Female</option>
+                                <option value="Male">Male</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Purok / Zone <span class="text-danger">*</span></label>
+                        <select name="purok" class="form-select" required>
+                            {% for purok in purok_choices %}
+                                <option value="{{ purok }}">{{ purok }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <input type="text" name="address" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" id="add_email" class="form-control" placeholder="name@example.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Contact Number</label>
+                        <input type="text" name="contact_number" id="add_contact" class="form-control" maxlength="11" pattern="\d{0,11}" title="Contact number must be digits only, max 11 digits">
+                        <div class="invalid-feedback">Contact number must be digits only, maximum 11 digits.</div>
+                    </div>
+                    <div class="form-check" id="add_pregnant_field">
+                        <input class="form-check-input" type="checkbox" name="is_pregnant" id="is_pregnant">
+                        <label class="form-check-label" for="is_pregnant">Is Pregnant?</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Patient</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editPatientModal" tabindex="-1" aria-labelledby="editPatientModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('patients.update_patient') }}" method="POST" id="editPatientForm">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="editPatientModalLabel"><i class="fas fa-edit me-2"></i>Edit Patient Record</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="patient_id" id="edit_patient_id">
+                    
+                    <div class="mb-3">
+                        <input type="hidden" name="full_name" id="edit_full_name" required>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label mb-1">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" id="edit_last_name" class="form-control" placeholder="Last Name" required pattern="[A-Za-zÑñ]+( [A-Za-zÑñ]+)*" title="Use letters and spaces only.">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label mb-1">First Name <span class="text-danger">*</span></label>
+                                <input type="text" id="edit_first_name" class="form-control" placeholder="First Name" required pattern="[A-Za-zÑñ]+( [A-Za-zÑñ]+)*" title="Use letters and spaces only.">
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label mb-1">Second Name <span class="text-muted">(optional)</span></label>
+                                <input type="text" id="edit_second_name" class="form-control" placeholder="Second Name" pattern="[A-Za-zÑñ]+( [A-Za-zÑñ]+)*" title="Use letters and spaces only.">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label mb-1">Middle Initial</label>
+                                <input type="text" id="edit_middle_initial" class="form-control text-uppercase" placeholder="N/A" maxlength="3" pattern="([A-Z]|N/A)" title="Enter one capital letter or N/A.">
+                            </div>
+                        </div>
+                        <div class="invalid-feedback">Enter Last and First Name. Second Name and M.I. are optional.</div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Birth Date</label>
+                            <input type="date" name="birth_date" id="edit_birth_date" class="form-control" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Gender</label>
+                            <select name="gender" id="edit_gender" class="form-select" required>
+                                <option value="Female">Female</option>
+                                <option value="Male">Male</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Purok / Zone</label>
+                        <select name="purok" id="edit_purok" class="form-select" required>
+                            {% for purok in purok_choices %}
+                            <option value="{{ purok }}">{{ purok }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <input type="text" name="address" id="edit_address" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" id="edit_email" class="form-control" placeholder="name@example.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Contact No.</label>
+                        <input type="text" name="contact_number" id="edit_contact" class="form-control" maxlength="11" pattern="\d{0,11}" title="Contact number must be digits only, max 11 digits">
+                        <div class="invalid-feedback">Contact number must be digits only, maximum 11 digits.</div>
+                    </div>
+                    <div class="form-check" id="edit_pregnant_field">
+                        <input class="form-check-input" type="checkbox" name="is_pregnant" id="edit_pregnant">
+                        <label class="form-check-label" for="edit_pregnant">Patient is Pregnant</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Update Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="historyModalLabel">
+                    <i class="fas fa-file-medical-alt me-2"></i>Medical History: <span id="historyPatientName" class="fw-bold"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="historyLoading" class="text-center p-4">
+                    <div class="spinner-border text-info" role="status"></div>
+                    <p class="mt-2 text-muted">Loading records...</p>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th scope="col">Date</th>
+                                <th scope="col">Type</th>
+                                <th scope="col">Diagnosis & Notes</th>
+                                <th scope="col">BP</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            </tbody>
+                    </table>
+                </div>
+
+                <div id="historyEmpty" class="text-center p-4" style="display: none;">
+                    <i class="fas fa-folder-open fa-2x text-muted mb-2 opacity-50"></i>
+                    <p class="text-muted">No consultation history found for this patient.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Filter Logic (Search by Name & Filter by Purok)
+    function filterTable() {
+        // ... (Keep your existing filterTable code here, it is fine) ...
+        const searchText = document.getElementById('searchInput').value.toLowerCase();
+        const purokFilter = document.getElementById('purokFilter').value;
+        const rows = document.querySelectorAll("#patientsTableBody tr");
+        let hasVisible = false;
+
+        rows.forEach(row => {
+            if(row.querySelector('td').getAttribute('colspan')) return;
+
+            const nameEl = row.querySelector('td:nth-child(1) .fw-bold');
+            const nameCell = nameEl ? nameEl.innerText.toLowerCase() : '';
+            const purokCell = row.querySelector('td:nth-child(3)').innerText;
+
+            const matchesSearch = nameCell.includes(searchText);
+            const matchesPurok = purokFilter === "" || purokCell.includes(purokFilter);
+
+            if (matchesSearch && matchesPurok) {
+                row.style.display = "";
+                hasVisible = true;
+            } else {
+                row.style.display = "none";
+            }
+        });
+
+        const noResultsDiv = document.getElementById('noResults');
+        if (noResultsDiv) {
+            noResultsDiv.style.display = hasVisible ? "none" : "block";
+        }
+    }
+
+    document.getElementById('searchInput').addEventListener('keyup', filterTable);
+
+    function clearSearch() {
+        document.getElementById('searchInput').value = "";
+        document.getElementById('purokFilter').value = "";
+        filterTable();
+    }
+
+    function confirmDeletePatient(formEl) {
+        const patientName = formEl && formEl.dataset ? formEl.dataset.patientName : 'this patient';
+        return confirm(`Are you sure you want to delete ${patientName}? This cannot be undone.`);
+    }
+
+    // 2. Open Edit Modal and Populate Data
+    function openEditModalFromButton(button) {
+        openEditModal(
+            button.dataset.patientId || '',
+            button.dataset.fullName || '',
+            button.dataset.birthDate || '',
+            button.dataset.gender || '',
+            button.dataset.purok || '',
+            button.dataset.address || '',
+            button.dataset.email || '',
+            button.dataset.contactNumber || '',
+            button.dataset.isPregnant || 'false'
+        );
+    }
+
+    function openEditModal(id, name, dob, gender, purok, address, email, contact, isPregnant) {
+        const parsedName = window.parseStructuredName
+            ? window.parseStructuredName(name)
+            : { lastName: '', firstName: '', secondName: '', middleInitial: '' };
+        document.getElementById('edit_patient_id').value = id;
+        document.getElementById('edit_last_name').value = parsedName.lastName;
+        document.getElementById('edit_first_name').value = parsedName.firstName;
+        document.getElementById('edit_second_name').value = parsedName.secondName;
+        document.getElementById('edit_middle_initial').value = parsedName.middleInitial;
+        document.getElementById('edit_full_name').value = name;
+        document.getElementById('edit_birth_date').value = dob;
+        document.getElementById('edit_gender').value = gender;
+        document.getElementById('edit_purok').value = purok;
+        document.getElementById('edit_address').value = address;
+        document.getElementById('edit_email').value = email;
+        document.getElementById('edit_contact').value = contact;
+        document.getElementById('edit_pregnant').checked = (isPregnant === 'true');
+
+        // Update pregnancy field visibility based on gender
+        const editPregnantField = document.getElementById('edit_pregnant_field');
+        if (gender === 'Male') {
+            editPregnantField.style.display = 'none';
+            document.getElementById('edit_pregnant').checked = false;
+        } else {
+            editPregnantField.style.display = 'block';
+        }
+        
+        // JAVASCRIPT FIX: Remove any existing backdrops before opening
+        const existingBackdrops = document.querySelectorAll('.modal-backdrop');
+        existingBackdrops.forEach(backdrop => backdrop.remove());
+
+        var myModalEl = document.getElementById('editPatientModal');
+        // Initialize with backdrop explicitly attached to body
+        var editModal = new bootstrap.Modal(myModalEl, { backdrop: true });
+        editModal.show();
+    }
+
+    // 3. View Medical History (Fetch from API)
+    function viewMedicalHistory(patientId, patientName) {
+        document.getElementById('historyPatientName').textContent = patientName;
+        
+        const tbody = document.getElementById('historyTableBody');
+        tbody.innerHTML = ''; 
+        
+        document.getElementById('historyLoading').style.display = 'block';
+        document.getElementById('historyEmpty').style.display = 'none';
+        
+        // JAVASCRIPT FIX: Remove any existing backdrops before opening
+        const existingBackdrops = document.querySelectorAll('.modal-backdrop');
+        existingBackdrops.forEach(backdrop => backdrop.remove());
+
+        var myModalEl = document.getElementById('historyModal');
+        // Initialize with backdrop explicitly attached to body
+        var historyModal = new bootstrap.Modal(myModalEl, { backdrop: true });
+        historyModal.show();
+
+        fetch(`/api/patient/${patientId}/history`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('historyLoading').style.display = 'none';
+
+                if (data.length === 0) {
+                    document.getElementById('historyEmpty').style.display = 'block';
+                } else {
+                    data.forEach(record => {
+                        const row = `
+                            <tr>
+                                <td>${record.date}</td>
+                                <td><span class="badge bg-primary bg-opacity-10 text-primary">${record.type}</span></td>
+                                <td>
+                                    <strong class="d-block text-dark">${record.diagnosis}</strong>
+                                    <small class="text-muted">${record.complaint}</small>
+                                </td>
+                                <td>${record.bp}</td>
+                            </tr>
+                        `;
+                        tbody.innerHTML += row;
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching history:', error);
+                document.getElementById('historyLoading').innerHTML = '<p class="text-danger">Error loading data. Please try again.</p>';
+            });
+    }
+
+    // NEW FIX: Ensure backdrops are cleaned up when modals close
+    document.addEventListener('hidden.bs.modal', function (event) {
+        const existingBackdrops = document.querySelectorAll('.modal-backdrop');
+        existingBackdrops.forEach(backdrop => backdrop.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    });
+// BULLETPROOF FIX: Move all modals directly to the body to escape broken HTML tables
+    document.addEventListener("DOMContentLoaded", function() {
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            document.body.appendChild(modal);
+        });
+
+        function titleCaseWords(value) {
+            return value
+                .toLowerCase()
+                .split(' ')
+                .filter(part => part.trim() !== '')
+                .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+                .join(' ');
+        }
+
+        function parseStructuredName(fullName) {
+            const fallback = { lastName: '', firstName: '', secondName: '', middleInitial: '' };
+            if (!fullName || typeof fullName !== 'string') return fallback;
+            const dashedParts = fullName.includes(' - ') ? fullName.split(' - ').map(p => p.trim()) : null;
+            if (dashedParts) {
+                if (dashedParts.length === 2) {
+                    return {
+                        lastName: dashedParts[0],
+                        firstName: dashedParts[1],
+                        secondName: '',
+                        middleInitial: ''
+                    };
+                }
+                if (dashedParts.length === 3) {
+                    const third = dashedParts[2].replace('.', '');
+                    if (/^[A-Z]$/.test(third)) {
+                        return {
+                            lastName: dashedParts[0],
+                            firstName: dashedParts[1],
+                            secondName: '',
+                            middleInitial: third
+                        };
+                    }
+                    return {
+                        lastName: dashedParts[0],
+                        firstName: dashedParts[1],
+                        secondName: dashedParts[2],
+                        middleInitial: ''
+                    };
+                }
+                if (dashedParts.length === 4) {
+                    return {
+                        lastName: dashedParts[0],
+                        firstName: dashedParts[1],
+                        secondName: dashedParts[2],
+                        middleInitial: dashedParts[3].replace('.', '')
+                    };
+                }
+            }
+
+            const words = fullName.trim().split(/\s+/).filter(Boolean);
+            if (words.length >= 2) {
+                const lastToken = words[words.length - 1];
+                const hasMiddleInitial = /^[A-Z]\.?$/.test(lastToken);
+                const middleInitial = hasMiddleInitial ? lastToken.replace('.', '') : '';
+                const baseWords = hasMiddleInitial ? words.slice(0, -1) : words;
+
+                if (baseWords.length >= 2) {
+                    return {
+                        lastName: baseWords[0],
+                        firstName: baseWords[1],
+                        secondName: baseWords.slice(2).join(' '),
+                        middleInitial
+                    };
+                }
+            }
+            fallback.lastName = fullName;
+            return fallback;
+        }
+
+        function composeStructuredName(prefix) {
+            const lastEl = document.getElementById(`${prefix}_last_name`);
+            const firstEl = document.getElementById(`${prefix}_first_name`);
+            const secondEl = document.getElementById(`${prefix}_second_name`);
+            const middleEl = document.getElementById(`${prefix}_middle_initial`);
+            const fullEl = document.getElementById(`${prefix}_full_name`);
+            if (!lastEl || !firstEl || !secondEl || !middleEl || !fullEl) return false;
+
+            const lastName = titleCaseWords(lastEl.value.replace(/[^A-Za-zÑñ\s]/g, '').trim());
+            const firstName = titleCaseWords(firstEl.value.replace(/[^A-Za-zÑñ\s]/g, '').trim());
+            const secondName = titleCaseWords(secondEl.value.replace(/[^A-Za-zÑñ\s]/g, '').trim());
+
+            const rawMiddle = middleEl.value.trim().toUpperCase();
+            let middleInitial = '';
+            if (rawMiddle === 'N/A' || rawMiddle === 'NA') {
+                middleInitial = 'N/A';
+            } else {
+                middleInitial = rawMiddle.replace(/[^A-Z]/g, '').slice(0, 1);
+            }
+
+            lastEl.value = lastName;
+            firstEl.value = firstName;
+            secondEl.value = secondName;
+            middleEl.value = middleInitial;
+
+            if (!lastName || !firstName) {
+                fullEl.value = '';
+                return false;
+            }
+
+            const hasSecond = !!secondName;
+            const hasMiddleInitialLetter = !!middleInitial && middleInitial !== 'N/A';
+
+            secondEl.setCustomValidity('');
+            middleEl.setCustomValidity('');
+
+            if (hasSecond && hasMiddleInitialLetter) {
+                fullEl.value = `${lastName} ${firstName} ${secondName} ${middleInitial}.`;
+            } else if (hasSecond) {
+                fullEl.value = `${lastName} ${firstName} ${secondName}`;
+            } else if (hasMiddleInitialLetter) {
+                fullEl.value = `${lastName} ${firstName} ${middleInitial}.`;
+            } else {
+                fullEl.value = `${lastName} ${firstName}`;
+            }
+            return true;
+        }
+
+        window.parseStructuredName = parseStructuredName;
+
+        ['add', 'edit'].forEach(function(prefix) {
+            const namePartIds = [
+                `${prefix}_last_name`,
+                `${prefix}_first_name`,
+                `${prefix}_second_name`
+            ];
+            namePartIds.forEach(function(id) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('input', function() {
+                    const cleaned = this.value.replace(/[^A-Za-zÑñ\s]/g, '');
+                    const titleCased = titleCaseWords(cleaned);
+                    this.value = titleCased;
+
+                    if (!this.value.trim() && this.required) {
+                        this.setCustomValidity('This field is required.');
+                    } else if (this.value && !/^[A-Za-zÑñ]+( [A-Za-zÑñ]+)*$/.test(this.value)) {
+                        this.setCustomValidity('Use letters and spaces only.');
+                    } else {
+                        this.setCustomValidity('');
+                    }
+                });
+                el.addEventListener('blur', function() {
+                    this.value = titleCaseWords(this.value);
+                });
+                el.addEventListener('invalid', function() {
+                    if (!this.value.trim()) {
+                        this.setCustomValidity('This field is required.');
+                    } else {
+                        this.setCustomValidity('Use letters and spaces only.');
+                    }
+                });
+            });
+
+            const middleEl = document.getElementById(`${prefix}_middle_initial`);
+            if (middleEl) {
+                middleEl.addEventListener('input', function() {
+                    const raw = this.value.toUpperCase().replace(/[^A-Z\/]/g, '');
+                    if (raw === 'N' || raw === 'N/' || raw === 'N/A') {
+                        this.value = raw === 'N' ? 'N' : (raw === 'N/' ? 'N/' : 'N/A');
+                    } else {
+                        this.value = raw.replace(/[^A-Z]/g, '').slice(0, 1);
+                    }
+                });
+                middleEl.addEventListener('blur', function() {
+                    const clean = this.value.trim().toUpperCase();
+                    if (clean === 'NA' || clean === 'N/A') {
+                        this.value = 'N/A';
+                    }
+                });
+            }
+
+            const formEl = document.getElementById(`${prefix}PatientForm`);
+            if (formEl) {
+                formEl.addEventListener('submit', function(e) {
+                    const validStructuredName = composeStructuredName(prefix);
+                    if (!validStructuredName) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const secondEl = document.getElementById(`${prefix}_second_name`);
+                        const middleEl = document.getElementById(`${prefix}_middle_initial`);
+                        if (middleEl && middleEl.validationMessage) {
+                            middleEl.reportValidity();
+                        } else if (secondEl && secondEl.validationMessage) {
+                            secondEl.reportValidity();
+                        }
+                    }
+                });
+            }
+        });
+
+        // === INPUT VALIDATION: Digits-only, max 11 for contact fields ===
+        const contactInputs = ['add_contact', 'edit_contact'];
+        contactInputs.forEach(function(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('input', function() {
+                // Remove any non-digit characters and enforce 11 digit max
+                this.value = this.value.replace(/\D/g, '').slice(0, 11);
+            });
+            el.addEventListener('keypress', function(e) {
+                if (!/[0-9]/.test(e.key)) {
+                    e.preventDefault();
+                }
+                if (this.value.length >= 11) {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        // === PREGNANCY FIELD: Hide when Male is selected ===
+        function togglePregnancyField(genderId, fieldId, checkboxId) {
+            const genderEl = document.getElementById(genderId);
+            const fieldEl = document.getElementById(fieldId);
+            const checkboxEl = document.getElementById(checkboxId);
+            if (!genderEl || !fieldEl) return;
+            function update() {
+                if (genderEl.value === 'Male') {
+                    fieldEl.style.display = 'none';
+                    if (checkboxEl) checkboxEl.checked = false;
+                } else {
+                    fieldEl.style.display = 'block';
+                }
+            }
+            genderEl.addEventListener('change', update);
+            update(); // run on load
+        }
+        togglePregnancyField('add_gender', 'add_pregnant_field', 'is_pregnant');
+        togglePregnancyField('edit_gender', 'edit_pregnant_field', 'edit_pregnant');
+
+        const today = new Date().toISOString().split('T')[0];
+        const addBirthDate = document.getElementById('add_birth_date');
+        const editBirthDate = document.getElementById('edit_birth_date');
+        if (addBirthDate) addBirthDate.setAttribute('max', today);
+        if (editBirthDate) editBirthDate.setAttribute('max', today);
+
+        document.querySelectorAll('form').forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                if (!form.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            });
+        });
+    });
+</script>
+
+<style>
+/* Optional: Custom style for pink badge */
+.bg-pink {
+    background-color: #ffc2d1;
+    color: #880e4f;
+}
+.bg-info-light {
+    background-color: rgba(13, 202, 240, 0.1);
+}
+.modal {
+    z-index: 1055 !important;
+}
+.modal-backdrop {
+    z-index: 1050 !important;
+}
+
+@media (max-width: 768px) {
+    .patient-action-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        justify-content: center;
+    }
+    #addPatientModal .modal-dialog,
+    #editPatientModal .modal-dialog {
+        margin: 0.75rem;
+    }
+}
+</style>
+{% endblock %}

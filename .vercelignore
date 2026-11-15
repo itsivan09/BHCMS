@@ -1,0 +1,16 @@
+.git
+backups/
+tests/
+*.zip
+BHCMS_Mobile_Application/
+BHCMS_Mobile_Application (2).zip
+BHCMS_Mobile_Application.zip
+__pycache__/
+.pytest_cache/
+venv/
+.env
+.env.*
+*.sql
+*.ps1
+benchmark_db.py
+DEMONSTRATION_GUIDE.md

@@ -1,0 +1,683 @@
+{% extends "base.html" %}
+{% from '_macros.html' import action_buttons %}
+
+{% block content %}
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --teal:      #0e7c86;
+    --teal-glow: rgba(14,124,134,.35);
+    --emerald:   #06d6a0;
+    --amber:     #f59e0b;
+    --amber-glow:rgba(245,158,11,.3);
+    --rose:      #ef4444;
+    --rose-glow: rgba(239,68,68,.3);
+    --navy:      #0d1f2d;
+    --panel:     #ffffff;
+    --surface:   #f8fafb;
+    --border:    rgba(14,124,134,.12);
+    --text-main: #1a2e3b;
+    --text-muted:#6b7a87;
+    --mono:      'Space Mono', monospace;
+    --sans:      'DM Sans', sans-serif;
+  }
+
+  .inv-wrap {
+    font-family: var(--sans);
+    background:
+      radial-gradient(ellipse 70% 50% at 95% 5%, rgba(6,214,160,.06) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 40% at 5% 95%, rgba(14,124,134,.07) 0%, transparent 55%),
+      linear-gradient(180deg, #eef7f8 0%, #f5f8fa 100%);
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+
+  /* ── Hero Banner ── */
+  .inv-hero {
+    background: linear-gradient(135deg, #0a5c63 0%, #0e7c86 55%, #10909b 100%);
+    padding: 40px 40px 72px;
+    position: relative;
+    overflow: hidden;
+  }
+  .inv-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(255,255,255,.025) 60px),
+      repeating-linear-gradient(0deg,  transparent, transparent 59px, rgba(255,255,255,.025) 60px);
+  }
+  .inv-hero-glow {
+    position: absolute;
+    width: 500px; height: 300px;
+    right: -100px; top: -50px;
+    background: radial-gradient(ellipse, rgba(6,214,160,.2) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .inv-hero-glow2 {
+    position: absolute;
+    width: 300px; height: 300px;
+    left: 30%; bottom: -120px;
+    background: radial-gradient(ellipse, rgba(255,255,255,.1) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .inv-hero-inner {
+    position: relative; z-index: 1;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    flex-wrap: wrap; gap: 24px;
+  }
+  .inv-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--emerald);
+    margin-bottom: 10px;
+  }
+  .inv-hero-title {
+    font-size: clamp(26px, 4vw, 40px);
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -.03em;
+    margin: 0 0 8px;
+    line-height: 1.1;
+  }
+  .inv-hero-sub {
+    font-size: 14px;
+    color: rgba(255,255,255,.5);
+    margin: 0;
+  }
+  .inv-hero-actions {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .inv-search-wrap {
+    position: relative;
+  }
+  .inv-search-wrap i {
+    position: absolute;
+    left: 14px; top: 50%; transform: translateY(-50%);
+    color: rgba(255,255,255,.4);
+    font-size: 13px; pointer-events: none;
+  }
+  .inv-search {
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 12px;
+    color: #fff;
+    padding: 10px 16px 10px 38px;
+    font-family: var(--sans);
+    font-size: 13px;
+    width: 220px;
+    outline: none;
+    transition: background .2s, border-color .2s, width .3s;
+  }
+  .inv-search::placeholder { color: rgba(255,255,255,.35); }
+  .inv-search:focus {
+    background: rgba(255,255,255,.15);
+    border-color: var(--emerald);
+    width: 270px;
+  }
+  .btn-inv-add {
+    background: linear-gradient(135deg, var(--emerald), #04c48d);
+    color: var(--navy);
+    border: none;
+    border-radius: 12px;
+    padding: 10px 22px;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    transition: transform .2s, box-shadow .2s;
+    box-shadow: 0 4px 16px rgba(6,214,160,.35);
+    white-space: nowrap;
+  }
+  .btn-inv-add:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(6,214,160,.5);
+  }
+
+  /* ── Summary Chips (float over hero) ── */
+  .inv-chips {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding: 0 40px;
+    margin-top: -36px;
+    margin-bottom: 0;
+  }
+  .inv-chip {
+    background: #fff;
+    border-radius: 14px;
+    padding: 18px 22px;
+    display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 4px 24px rgba(0,0,0,.09), 0 1px 4px rgba(0,0,0,.04);
+    animation: chipRise .5s both;
+  }
+  .inv-chip:nth-child(1) { animation-delay: .05s; }
+  .inv-chip:nth-child(2) { animation-delay: .12s; }
+  .inv-chip:nth-child(3) { animation-delay: .19s; }
+  @keyframes chipRise {
+    from { opacity:0; transform: translateY(12px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+  .chip-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .chip-icon.teal    { background: rgba(14,124,134,.1); color: var(--teal); }
+  .chip-icon.emerald { background: rgba(6,214,160,.12); color: #04a87a; }
+  .chip-icon.rose    { background: rgba(239,68,68,.1);  color: var(--rose); }
+  .chip-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .07em; }
+  .chip-value { font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--text-main); line-height: 1.1; }
+
+  /* ── Main Table Panel ── */
+  .inv-panel {
+    margin: 28px 40px 0;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 2px 20px rgba(0,0,0,.06);
+    overflow: hidden;
+    animation: chipRise .6s .25s both;
+  }
+  .inv-panel-header {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
+  }
+  .inv-panel-title {
+    font-size: 15px; font-weight: 700; color: var(--text-main);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .inv-panel-title .accent-bar {
+    width: 4px; height: 20px; border-radius: 4px;
+    background: linear-gradient(180deg, var(--teal), var(--emerald));
+  }
+  .inv-filter-tabs {
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .filter-tab {
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer; border: 1.5px solid transparent;
+    transition: all .2s;
+    background: var(--surface); color: var(--text-muted);
+  }
+  .filter-tab:hover, .filter-tab.active {
+    background: rgba(14,124,134,.1);
+    border-color: var(--teal);
+    color: var(--teal);
+  }
+  .filter-tab[data-filter="Low Stock"].active {
+    background: rgba(239,68,68,.08);
+    border-color: var(--rose); color: var(--rose);
+  }
+
+  /* ── Table ── */
+  .inv-table { width: 100%; border-collapse: collapse; }
+  .inv-table thead th {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 14px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+  }
+  .inv-table thead th:first-child { padding-left: 28px; }
+  .inv-table thead th:last-child  { padding-right: 28px; text-align: center; }
+
+  .inv-table tbody tr {
+    border-bottom: 1px solid rgba(0,0,0,.04);
+    transition: background .15s;
+  }
+  .inv-table tbody tr:hover { background: rgba(14,124,134,.03); }
+  .inv-table tbody tr:last-child { border-bottom: none; }
+
+  .inv-table td {
+    padding: 16px 20px;
+    font-size: 14px;
+    color: var(--text-main);
+    vertical-align: middle;
+  }
+  .inv-table td:first-child { padding-left: 28px; }
+  .inv-table td:last-child  { padding-right: 28px; text-align: center; }
+
+  .item-name-cell {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .item-icon-wrap {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0;
+  }
+  .item-icon-wrap.medicine  { background: rgba(14,124,134,.1); color: var(--teal); }
+  .item-icon-wrap.supply    { background: rgba(6,214,160,.1); color: #04a87a; }
+  .item-icon-wrap.equipment { background: rgba(245,158,11,.1); color: var(--amber); }
+  .item-icon-wrap.other     { background: rgba(107,122,135,.1); color: var(--text-muted); }
+
+  .item-name { font-weight: 600; font-size: 14px; text-transform: capitalize; }
+  .item-id   { font-family: var(--mono); font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+  .cat-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+  }
+  .cat-badge.medicine  { background: rgba(14,124,134,.1); color: var(--teal); }
+  .cat-badge.supply    { background: rgba(6,214,160,.1); color: #04a87a; }
+  .cat-badge.equipment { background: rgba(245,158,11,.1); color: #c27d07; }
+  .cat-badge.other     { background: rgba(107,122,135,.1); color: var(--text-muted); }
+
+  .qty-cell {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-main);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .qty-bar-wrap {
+    flex: 1; height: 4px; background: rgba(0,0,0,.06); border-radius: 4px;
+    min-width: 60px; max-width: 100px; overflow: hidden;
+  }
+  .qty-bar {
+    height: 100%; border-radius: 4px;
+    transition: width .6s cubic-bezier(.4,0,.2,1);
+  }
+  .qty-bar.good { background: linear-gradient(90deg, var(--teal), var(--emerald)); }
+  .qty-bar.low  { background: linear-gradient(90deg, #f97316, var(--rose)); }
+
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 20px;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: .04em;
+  }
+  .status-pill .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+  }
+  .status-pill.good {
+    background: rgba(6,214,160,.12);
+    color: #04a87a;
+    border: 1.5px solid rgba(6,214,160,.3);
+  }
+  .status-pill.good .dot { background: var(--emerald); box-shadow: 0 0 6px var(--emerald); }
+  .status-pill.low {
+    background: rgba(239,68,68,.08);
+    color: var(--rose);
+    border: 1.5px solid rgba(239,68,68,.25);
+  }
+  .status-pill.low .dot { background: var(--rose); box-shadow: 0 0 6px var(--rose); animation: blink 1.2s infinite; }
+
+  @keyframes blink {
+    0%,100% { opacity: 1; } 50% { opacity: .3; }
+  }
+
+  .btn-del {
+    background: transparent;
+    border: 1.5px solid rgba(239,68,68,.3);
+    color: var(--rose);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 12px; font-weight: 600;
+    font-family: var(--sans);
+    cursor: pointer;
+    transition: all .2s;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-del:hover {
+    background: rgba(239,68,68,.08);
+    border-color: var(--rose);
+    transform: scale(1.03);
+  }
+
+  .restricted-label {
+    font-size: 11px; color: var(--text-muted);
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+
+  .empty-row td {
+    text-align: center; padding: 60px 20px;
+    color: var(--text-muted); font-size: 14px;
+  }
+
+  @media(max-width: 768px) {
+    .inv-hero { padding: 28px 20px 60px; }
+    .inv-hero-actions { width: 100%; }
+    .inv-search-wrap { width: 100%; }
+    .inv-search { width: 100%; }
+    .inv-search:focus { width: 100%; }
+    .btn-inv-add { width: 100%; justify-content: center; }
+    .inv-chips { grid-template-columns: 1fr; padding: 0 16px; }
+    .inv-chips, .inv-panel { margin-left: 16px; margin-right: 16px; }
+    .inv-table thead { display: none; }
+    .inv-table td { display: block; text-align: right; padding: 8px 20px; }
+    .inv-table td::before {
+      content: attr(data-label);
+      float: left;
+      font-size: 11px; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: .06em;
+    }
+    .inv-table td:first-child { padding-top: 16px; }
+    .inv-table td:last-child  { padding-bottom: 16px; }
+    .item-name-cell { justify-content: flex-end; }
+  }
+
+  /* ── Modal Redesign ── */
+  .inv-modal .modal-content {
+    border: none;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,.18);
+  }
+  .inv-modal .modal-header {
+    background: linear-gradient(135deg, #0a5c63, #0e7c86);
+    border: none; padding: 24px 28px;
+  }
+  .inv-modal .modal-title { color: #fff; font-weight: 700; font-size: 17px; display: flex; align-items: center; gap: 10px; }
+  .inv-modal .modal-title i { color: var(--emerald); }
+  .inv-modal .btn-close { filter: invert(1) brightness(0.7); }
+  .inv-modal .modal-body { padding: 28px; background: #fff; }
+  .inv-modal .modal-footer { background: var(--surface); border-top: 1px solid var(--border); padding: 16px 28px; }
+  .inv-modal .form-label {
+    font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .07em;
+    color: var(--text-muted); margin-bottom: 6px;
+  }
+  .inv-modal .form-control, .inv-modal .form-select {
+    border: 1.5px solid rgba(0,0,0,.1);
+    border-radius: 10px;
+    font-family: var(--sans);
+    font-size: 14px; padding: 10px 14px;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .inv-modal .form-control:focus, .inv-modal .form-select:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px var(--teal-glow);
+    outline: none;
+  }
+  .inv-modal .form-group { margin-bottom: 18px; }
+  .btn-modal-submit {
+    background: linear-gradient(135deg, var(--teal), #0a9bab);
+    color: #fff; border: none; border-radius: 10px;
+    padding: 10px 24px; font-weight: 700; font-size: 14px;
+    cursor: pointer; transition: transform .2s, box-shadow .2s;
+    display: inline-flex; align-items: center; gap: 8px;
+    box-shadow: 0 4px 14px var(--teal-glow);
+  }
+  .btn-modal-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 24px var(--teal-glow); }
+  .btn-modal-cancel {
+    background: transparent; border: 1.5px solid rgba(0,0,0,.15);
+    color: var(--text-muted); border-radius: 10px;
+    padding: 10px 20px; font-weight: 600; font-size: 13px;
+    cursor: pointer; transition: all .2s;
+  }
+  .btn-modal-cancel:hover { background: rgba(0,0,0,.04); }
+
+  @media(max-width: 768px) {
+    .inv-modal .modal-body,
+    .inv-modal .modal-footer {
+      padding: 16px;
+    }
+    #inventoryForm .modal-body > div[style*="grid-template-columns:1fr 1fr"] {
+      grid-template-columns: 1fr !important;
+      gap: 10px !important;
+    }
+  }
+</style>
+
+<div class="inv-wrap">
+
+  <!-- Hero -->
+  <div class="inv-hero">
+    <div class="inv-hero-glow"></div>
+    <div class="inv-hero-glow2"></div>
+    <div class="inv-hero-inner">
+      <div>
+        <p class="inv-eyebrow"><i class="fas fa-boxes me-1"></i> Stock Control Module</p>
+        <h2 class="inv-hero-title">Inventory Management</h2>
+        <p class="inv-hero-sub">Real-time stock levels, alerts, and item lifecycle tracking</p>
+      </div>
+      <div class="inv-hero-actions">
+        <div class="inv-search-wrap">
+          <i class="fas fa-search"></i>
+          <input type="search" class="inv-search" placeholder="Search items…" id="inventory-search" aria-label="Search inventory items">
+        </div>
+        <button type="button" class="btn-inv-add" data-bs-toggle="modal" data-bs-target="#addItemModal" aria-label="Add new inventory item">
+          <i class="fas fa-plus"></i> Add Item
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Chips -->
+  <div class="inv-chips">
+    <div class="inv-chip">
+      <div class="chip-icon teal"><i class="fas fa-boxes"></i></div>
+      <div>
+        <div class="chip-label">Total Items</div>
+        <div class="chip-value" id="chip-total">{{ items|length }}</div>
+      </div>
+    </div>
+    <div class="inv-chip">
+      <div class="chip-icon emerald"><i class="fas fa-check-circle"></i></div>
+      <div>
+        <div class="chip-label">Good Stock</div>
+        <div class="chip-value" id="chip-good">{{ items|selectattr('quantity','gt', 10)|list|length }}</div>
+      </div>
+    </div>
+    <div class="inv-chip">
+      <div class="chip-icon rose"><i class="fas fa-exclamation-triangle"></i></div>
+      <div>
+        <div class="chip-label">Low / Critical</div>
+        <div class="chip-value" id="chip-low">{{ items|selectattr('quantity','le', 10)|list|length }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Panel -->
+  <div class="inv-panel">
+    <div class="inv-panel-header">
+      <div class="inv-panel-title">
+        <div class="accent-bar"></div>
+        <span>Stock Register</span>
+      </div>
+      <div class="inv-filter-tabs" role="tablist" aria-label="Inventory filters">
+        <button type="button" class="filter-tab active" data-filter="All" role="tab" aria-selected="true">All</button>
+        <button type="button" class="filter-tab" data-filter="Medicine" role="tab" aria-selected="false">Medicine</button>
+        <button type="button" class="filter-tab" data-filter="Supply" role="tab" aria-selected="false">Supply</button>
+        <button type="button" class="filter-tab" data-filter="Equipment" role="tab" aria-selected="false">Equipment</button>
+        <button type="button" class="filter-tab" data-filter="Low Stock" role="tab" aria-selected="false">Low Stock</button>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="inv-table" id="inventoryTable">
+        <thead>
+          <tr>
+            <th scope="col">Item</th>
+            <th scope="col">Category</th>
+            <th scope="col">Quantity</th>
+            <th scope="col" class="text-center">Status</th>
+            <th scope="col" class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          {% set cat = (item.category or 'Other')|lower %}
+          {% set is_low = item.quantity <= item.min_stock_level %}
+          {% set cat_icon = {
+            'medicine': 'fa-capsules',
+            'supply': 'fa-syringe',
+            'equipment': 'fa-stethoscope',
+            'other': 'fa-box'
+          } %}
+          <tr data-category="{{ item.category or 'Other' }}" data-status="{{ 'Low Stock' if is_low else 'Good' }}" data-name="{{ item.name|lower }}">
+            <td data-label="Item">
+              <div class="item-name-cell">
+                <div class="item-icon-wrap {{ cat }}">
+                  <i class="fas {{ cat_icon.get(cat, 'fa-box') }}"></i>
+                </div>
+                <div>
+                  <div class="item-name">{{ item.name }}</div>
+                  <div class="item-id">#{{ '%04d' % item.id }}</div>
+                </div>
+              </div>
+            </td>
+            <td data-label="Category">
+              <span class="cat-badge {{ cat }}">
+                <i class="fas {{ cat_icon.get(cat, 'fa-box') }}"></i>
+                {{ item.category or 'Other' }}
+              </span>
+            </td>
+            <td data-label="Quantity">
+              <div class="qty-cell">
+                {{ item.quantity }}
+                <div class="qty-bar-wrap">
+                  <div class="qty-bar {{ 'low' if is_low else 'good' }}"
+                       style="width: {{ [([item.quantity, 0]|max / ([item.min_stock_level * 3, 1]|max) * 100), 100]|min }}%">
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td data-label="Status" class="text-center">
+              {% if is_low %}
+              <span class="status-pill low"><span class="dot"></span> Low Stock</span>
+              {% else %}
+              <span class="status-pill good"><span class="dot"></span> Good</span>
+              {% endif %}
+            </td>
+            <td data-label="Actions" class="text-center">
+              {% if current_user.role in ['Admin', 'Midwife'] %}
+              <form method="POST" action="{{ url_for('inventory.delete_inventory_item', item_id=item.id) }}" style="display:inline;"
+                    onsubmit="return confirm('Delete {{ item.name }}?');">
+                <button type="submit" class="btn-del" aria-label="Delete inventory item">
+                  <i class="fas fa-trash-alt"></i> Delete
+                </button>
+              </form>
+              {% else %}
+              <span class="restricted-label"><i class="fas fa-lock"></i> Restricted</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr class="empty-row">
+            <td colspan="5">
+              <i class="fas fa-box-open" style="font-size:32px; opacity:.3; display:block; margin-bottom:10px;"></i>
+              No inventory items found
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /.inv-wrap -->
+
+<!-- Add Item Modal -->
+<div class="modal fade inv-modal" id="addItemModal" tabindex="-1" aria-labelledby="addItemModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addItemModalLabel"><i class="fas fa-plus-circle"></i> Add New Inventory Item</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('inventory.inventory') }}" novalidate id="inventoryForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="itemName" class="form-label"><i class="fas fa-box me-1"></i> Item Name *</label>
+            <input type="text" id="itemName" class="form-control" name="name"
+                   placeholder="e.g., Paracetamol 500mg" minlength="3" maxlength="100" required>
+            <div class="invalid-feedback"><i class="fas fa-exclamation-circle me-1"></i>Item name (3–100 characters) is required</div>
+          </div>
+          <div class="form-group">
+            <label for="itemCategory" class="form-label"><i class="fas fa-tag me-1"></i> Category</label>
+            <select id="itemCategory" class="form-select" name="category">
+              <option value="">Select Category</option>
+              <option value="Medicine">Medicine</option>
+              <option value="Supply">Supply</option>
+              <option value="Equipment">Equipment</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="form-group">
+              <label for="itemQuantity" class="form-label"><i class="fas fa-calculator me-1"></i> Quantity *</label>
+              <input type="number" id="itemQuantity" class="form-control" name="quantity" placeholder="0" min="0" required>
+              <div class="invalid-feedback">Quantity must be 0 or more</div>
+            </div>
+            <div class="form-group">
+              <label for="minStockLevel" class="form-label"><i class="fas fa-bell me-1"></i> Min. Stock</label>
+              <input type="number" id="minStockLevel" class="form-control" name="min_stock_level" placeholder="10" min="0" value="10">
+            </div>
+          </div>
+          <div class="form-group mb-0">
+            <label for="expiryDate" class="form-label"><i class="fas fa-calendar-times me-1"></i> Expiry Date</label>
+            <input type="date" id="expiryDate" class="form-control" name="expiry_date">
+            <div class="form-text" style="font-size:11px; color:#aaa; margin-top:4px;">Leave blank if no expiry date</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn-modal-submit" id="submitInventoryBtn">
+            <i class="fas fa-plus"></i> Add Item
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Search filter
+  const searchEl = document.getElementById('inventory-search');
+  const rows = document.querySelectorAll('#inventoryTable tbody tr[data-name]');
+
+  function applyFilters() {
+    const q = searchEl.value.toLowerCase();
+    const activeTab = document.querySelector('.filter-tab.active')?.dataset.filter || 'All';
+    rows.forEach(row => {
+      const nameMatch = row.dataset.name.includes(q);
+      const catMatch  = activeTab === 'All' || row.dataset.category === activeTab || (activeTab === 'Low Stock' && row.dataset.status === 'Low Stock');
+      row.style.display = (nameMatch && catMatch) ? '' : 'none';
+    });
+  }
+
+  searchEl.addEventListener('input', applyFilters);
+
+  document.querySelectorAll('.filter-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      document.querySelectorAll('.filter-tab').forEach(t => t.setAttribute('aria-selected', 'false'));
+      this.setAttribute('aria-selected', 'true');
+      applyFilters();
+    });
+  });
+
+  // Form validation
+  document.getElementById('inventoryForm').addEventListener('submit', function(e) {
+    const name = document.getElementById('itemName');
+    const qty  = document.getElementById('itemQuantity');
+    let ok = true;
+    if (name.value.trim().length < 3) { name.classList.add('is-invalid'); ok = false; } else { name.classList.remove('is-invalid'); }
+    if (!qty.value || parseInt(qty.value) < 0) { qty.classList.add('is-invalid'); ok = false; } else { qty.classList.remove('is-invalid'); }
+    if (!ok) e.preventDefault();
+  });
+  ['itemName','itemQuantity'].forEach(id => {
+    document.getElementById(id).addEventListener('input', function() { this.classList.remove('is-invalid'); });
+  });
+</script>
+
+{% endblock %}

@@ -1,0 +1,797 @@
+{% if current_user.is_authenticated and current_user.role in ['Midwife', 'BHW'] %}
+<style>
+    /* Floating Action Button (FAB) Styles */
+    .fab-container {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 1050;
+    }
+
+    .fab-btn {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: var(--primary-color, #0e7c86);
+        border: none;
+        box-shadow: 0 4px 15px rgba(14, 124, 134, 0.4);
+        font-size: 24px;
+        color: white;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    .fab-btn:hover {
+        transform: scale(1.1) rotate(90deg);
+        background: var(--primary-dark, #0a5f67);
+        box-shadow: 0 8px 25px rgba(14, 124, 134, 0.6);
+    }
+
+    .quick-action-menu {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 5px 30px rgba(0,0,0,0.15);
+        padding: 10px;
+        min-width: 250px;
+        margin-bottom: 15px;
+    }
+
+    .dropdown-item {
+        padding: 12px 20px;
+        border-radius: 8px;
+        transition: background 0.2s;
+        font-weight: 500;
+        color: var(--secondary-color, #2c3e50);
+        display: flex;
+        align-items: center;
+    }
+
+    .dropdown-item i {
+        width: 25px; /* Fixed width for alignment */
+        text-align: center;
+        margin-right: 10px;
+    }
+
+    .dropdown-item:hover {
+        background-color: #f0f7f8;
+        color: var(--primary-color, #0e7c86);
+        transform: translateX(5px);
+    }
+</style>
+
+<div class="fab-container dropup">
+    <button type="button" class="fab-btn" data-bs-toggle="dropdown" aria-expanded="false" title="Quick Actions">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <ul class="dropdown-menu dropdown-menu-end quick-action-menu animate__animated animate__fadeInUp">
+        <li><h6 class="dropdown-header text-uppercase small text-muted font-weight-bold">BHW Tools</h6></li>
+        
+        <li>
+            <a class="dropdown-item" href="{{ url_for('household_profile') }}">
+                <i class="fas fa-home text-primary"></i> Profiling
+            </a>
+        </li>
+
+        <li>
+            <a class="dropdown-item" href="{{ url_for('operation_timbang') }}">
+                <i class="fas fa-scale-balanced text-warning"></i> OPT / Nutrition
+            </a>
+        </li>
+
+        <li>
+            <a class="dropdown-item" href="{{ url_for('core.community_events') }}">
+                <i class="fas fa-bullhorn text-success"></i> Community Events
+            </a>
+        </li>
+
+        <li><hr class="dropdown-divider"></li>
+
+        <li>
+            <a class="dropdown-item" href="{{ url_for('bhw_dashboard') }}">
+                <i class="fas fa-sync text-info"></i> Refresh Dashboard
+            </a>
+        </li>
+        
+        <li>
+            <a class="dropdown-item" href="{{ url_for('core.dashboard') }}">
+                <i class="fas fa-arrow-left text-secondary"></i> Main System
+            </a>
+        </li>
+    </ul>
+</div>
+{% endif %}
+
+{# ══════════════════════════════════════════════════════════
+   MIDWIFE QUICK ACTION FAB
+   Shown only for Midwife (and Admin)
+   Design matches the midwife dashboard's Plus Jakarta Sans style
+══════════════════════════════════════════════════════════ #}
+{% if current_user.is_authenticated and current_user.role in ['Midwife', 'Admin'] %}
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
+.mw-fab-container {
+    position: fixed;
+    bottom: 30px;
+    z-index: 1050;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+/* Admin sees both FABs: BHW on right, Midwife shifted left */
+.mw-fab-container { right: 30px; }
+{% if current_user.role == 'Admin' %}
+.mw-fab-container { right: 110px; }
+{% endif %}
+
+.mw-fab-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0e7c86, #0a5f67);
+    border: none;
+    box-shadow: 0 4px 18px rgba(14,124,134,0.45), 0 2px 6px rgba(14,124,134,0.2);
+    font-size: 22px;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+}
+
+.mw-fab-btn::after {
+    content: 'MW';
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 20px;
+    height: 20px;
+    background: #e11d48;
+    border-radius: 50%;
+    font-size: 8px;
+    font-weight: 800;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+}
+
+.mw-fab-btn:hover {
+    transform: scale(1.1) rotate(45deg);
+    box-shadow: 0 8px 28px rgba(14,124,134,0.6);
+}
+
+.mw-fab-btn.is-open {
+    transform: rotate(45deg);
+    background: linear-gradient(135deg, #0a5f67, #083d42);
+}
+
+.mw-fab-panel {
+    position: absolute;
+    bottom: 72px;
+    right: 0;
+    width: 290px;
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 8px 40px rgba(8,40,45,0.18), 0 2px 8px rgba(8,40,45,0.08);
+    border: 1px solid rgba(14,124,134,0.1);
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+    transform-origin: bottom right;
+    pointer-events: none;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.mw-fab-panel.is-open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: all;
+}
+
+.mw-fab-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    background: linear-gradient(135deg, #0e7c86, #0a5f67);
+    color: white;
+}
+
+.mw-fab-header-icon {
+    width: 34px;
+    height: 34px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.mw-fab-header-title {
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.mw-fab-header-sub {
+    font-size: 0.68rem;
+    opacity: 0.78;
+    margin: 2px 0 0;
+    font-weight: 500;
+}
+
+.mw-fab-items { padding: 8px; }
+
+.mw-fab-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 11px;
+    text-decoration: none !important;
+    color: #0d2b30 !important;
+    transition: background 0.15s, transform 0.15s;
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+.mw-fab-item:hover {
+    background: #f0fafb;
+    transform: translateX(3px);
+}
+
+.mw-fab-item-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+}
+
+.mw-fab-item:hover .mw-fab-item-icon { transform: scale(1.1); }
+
+.mw-fab-item-label {
+    font-size: 0.83rem;
+    font-weight: 700;
+    color: #0d2b30;
+    line-height: 1.3;
+    display: block;
+}
+
+.mw-fab-item-desc {
+    font-size: 0.7rem;
+    color: #8faeb5;
+    font-weight: 500;
+    display: block;
+    margin-top: 1px;
+}
+
+.mw-fab-badge {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.mw-fab-badge-amber { background:#fef3c7; color:#92400e; }
+.mw-fab-divider { height:1px; background:#f0f5f6; margin:4px 8px; }
+
+.mw-fab-footer { padding: 8px 12px 10px; border-top: 1px solid #f0f5f6; }
+
+.mw-fab-footer-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px;
+    border-radius: 9px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #0e7c86 !important;
+    text-decoration: none !important;
+    background: #e0f7f8;
+    transition: background 0.15s;
+}
+
+.mw-fab-footer-link:hover { background: #c4edef; }
+
+@media (max-width: 575.98px) {
+    .mw-fab-container { bottom: 20px; right: 20px; }
+    .mw-fab-btn { width: 52px; height: 52px; font-size: 18px; }
+    .mw-fab-panel { width: calc(100vw - 40px); right: 0; bottom: 64px; }
+}
+</style>
+
+<div class="mw-fab-container" id="mwFabContainer">
+
+    <button class="mw-fab-btn" id="mwFabBtn" type="button" aria-label="Midwife Quick Actions">
+        <i class="fas fa-user-nurse" id="mwFabIcon"></i>
+    </button>
+
+    <div class="mw-fab-panel" id="mwFabPanel">
+
+        <div class="mw-fab-header">
+            <div class="mw-fab-header-icon"><i class="fas fa-heart-pulse"></i></div>
+            <div>
+                <p class="mw-fab-header-title">Midwife Quick Actions</p>
+                <p class="mw-fab-header-sub">Jump directly to any tool</p>
+            </div>
+        </div>
+
+        <div class="mw-fab-items">
+
+            <a class="mw-fab-item" href="{{ url_for('prenatal_tracker') }}">
+                <div class="mw-fab-item-icon" style="background:#fce7f3; color:#be185d;">
+                    <i class="fas fa-baby"></i>
+                </div>
+                <div>
+                    <span class="mw-fab-item-label">Prenatal Tracker</span>
+                    <span class="mw-fab-item-desc">Monitor pregnant mothers & EDD</span>
+                </div>
+            </a>
+
+            <button class="mw-fab-item" type="button" onclick="mwFabOpenImmunModal()">
+                <div class="mw-fab-item-icon" style="background:#fef3c7; color:#d97706;">
+                    <i class="fas fa-syringe"></i>
+                </div>
+                <div style="flex:1;">
+                    <span class="mw-fab-item-label">Schedule Immunization</span>
+                    <span class="mw-fab-item-desc">Add a new vaccine schedule</span>
+                </div>
+                <span class="mw-fab-badge mw-fab-badge-amber">+ New</span>
+            </button>
+
+            <a class="mw-fab-item" href="{{ url_for('immunization_schedule') }}">
+                <div class="mw-fab-item-icon" style="background:#dcfce7; color:#15803d;">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div>
+                    <span class="mw-fab-item-label">Immunization Schedule</span>
+                    <span class="mw-fab-item-desc">View overdue & upcoming vaccines</span>
+                </div>
+            </a>
+
+            <div class="mw-fab-divider"></div>
+
+            <a class="mw-fab-item" href="{{ url_for('patients.patients') }}">
+                <div class="mw-fab-item-icon" style="background:#dbeafe; color:#1d4ed8;">
+                    <i class="fas fa-stethoscope"></i>
+                </div>
+                <div>
+                    <span class="mw-fab-item-label">New Consultation</span>
+                    <span class="mw-fab-item-desc">Select a patient to begin</span>
+                </div>
+            </a>
+
+            <a class="mw-fab-item" href="{{ url_for('appointments.view_appointments') }}">
+                <div class="mw-fab-item-icon" style="background:#ede9fe; color:#6d28d9;">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div>
+                    <span class="mw-fab-item-label">Appointments</span>
+                    <span class="mw-fab-item-desc">Book or manage appointments</span>
+                </div>
+            </a>
+
+            <a class="mw-fab-item" href="{{ url_for('inventory.inventory') }}">
+                <div class="mw-fab-item-icon" style="background:#d1fae5; color:#065f46;">
+                    <i class="fas fa-box-open"></i>
+                </div>
+                <div>
+                    <span class="mw-fab-item-label">Inventory</span>
+                    <span class="mw-fab-item-desc">Check stocks & medicines</span>
+                </div>
+            </a>
+
+            <div class="mw-fab-divider"></div>
+
+            <a class="mw-fab-item" href="{{ url_for('reports.reports') }}">
+                <div class="mw-fab-item-icon" style="background:#f3e8ff; color:#7c3aed;">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <div>
+                    <span class="mw-fab-item-label">Reports & Analytics</span>
+                    <span class="mw-fab-item-desc">Morbidity, demographics, exports</span>
+                </div>
+            </a>
+
+        </div>
+
+        <div class="mw-fab-footer">
+            <a class="mw-fab-footer-link" href="{{ url_for('midwife_dashboard') }}">
+                <i class="fas fa-heart-pulse"></i>
+                Open Full Midwife Dashboard
+                <i class="fas fa-arrow-right" style="font-size:10px;"></i>
+            </a>
+        </div>
+
+    </div>
+</div>
+
+<script>
+(function() {
+    const btn   = document.getElementById('mwFabBtn');
+    const panel = document.getElementById('mwFabPanel');
+    const icon  = document.getElementById('mwFabIcon');
+    if (!btn || !panel) return;
+
+    function closePanel() {
+        panel.classList.remove('is-open');
+        btn.classList.remove('is-open');
+        icon.className = 'fas fa-user-nurse';
+    }
+
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (panel.classList.contains('is-open')) {
+            closePanel();
+        } else {
+            panel.classList.add('is-open');
+            btn.classList.add('is-open');
+            icon.className = 'fas fa-times';
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#mwFabContainer')) closePanel();
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closePanel();
+    });
+})();
+
+function mwFabOpenImmunModal() {
+    // Close the FAB panel first
+    document.getElementById('mwFabPanel').classList.remove('is-open');
+    document.getElementById('mwFabBtn').classList.remove('is-open');
+    document.getElementById('mwFabIcon').className = 'fas fa-user-nurse';
+
+    // Open the modal (works on any page since modal is now embedded here)
+    const modal = document.getElementById('globalSchedModal');
+    if (modal) {
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+}
+</script>
+
+{# ── GLOBAL SCHEDULE IMMUNIZATION MODAL ─────────────────────────────────── #}
+<style>
+.mw-modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(8,40,45,.5);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+}
+.mw-modal-overlay.open { display: flex; }
+.mw-modal {
+  background: #fff;
+  border-radius: 20px;
+  width: 540px;
+  max-width: calc(100vw - 32px);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 80px rgba(8,40,45,.25);
+  animation: globalModalIn .28s ease;
+}
+@keyframes globalModalIn {
+  from { opacity: 0; transform: translateY(20px) scale(.97); }
+  to   { opacity: 1; transform: none; }
+}
+.mw-modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 22px 28px 18px;
+  border-bottom: 1.5px solid #f0f5f6;
+}
+.mw-modal-title {
+  font-size: 1.05rem; font-weight: 800; color: #0d2b30;
+  display: flex; align-items: center; gap: 10px;
+}
+.mw-modal-title i { color: #0e7c86; }
+.mw-modal-close {
+  width: 32px; height: 32px; border-radius: 8px;
+  border: 1.5px solid #e2eaed; background: #f5f7fa;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 13px; color: #8faeb5;
+  transition: background .15s, color .15s;
+}
+.mw-modal-close:hover { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+.mw-modal-body { padding: 22px 28px; }
+.mw-modal-foot {
+  display: flex; justify-content: flex-end; gap: 10px;
+  padding: 16px 28px 22px; border-top: 1.5px solid #f0f5f6;
+}
+.mw-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.mw-form-group { display: flex; flex-direction: column; gap: 6px; }
+.mw-label {
+  font-size: .72rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em; color: #4a7a84;
+}
+.mw-label .req { color: #dc2626; }
+.mw-input {
+  padding: 10px 13px; border: 1.5px solid #dce9ec; border-radius: 10px;
+  font-size: .88rem; color: #0d2b30; background: #fff; outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.mw-input:focus { border-color: #0e7c86; box-shadow: 0 0 0 3px rgba(14,124,134,.12); }
+.mw-hint { font-size: .72rem; color: #8faeb5; }
+.g-patient-search-wrap { position: relative; }
+.g-patient-search-wrap .g-search-icon {
+  position: absolute; left: 12px; top: 50%;
+  transform: translateY(-50%); color: #8faeb5; font-size: 12px; pointer-events: none;
+}
+.g-patient-search-wrap .mw-input { padding-left: 34px; width: 100%; }
+.g-patient-dropdown {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 200;
+  background: #fff; border: 1.5px solid #dce9ec; border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(13,43,48,.12); max-height: 200px; overflow-y: auto;
+}
+.g-patient-dropdown.open { display: block; }
+.g-patient-opt {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; cursor: pointer; transition: background .1s; font-size: .84rem;
+}
+.g-patient-opt:hover { background: #f5fcfd; }
+.g-patient-opt-name { font-weight: 700; color: #0d2b30; }
+.g-patient-opt-meta { font-size: .72rem; color: #8faeb5; }
+.btn-mw-save {
+  padding: 10px 22px; background: #0e7c86; color: #fff;
+  border: none; border-radius: 10px; font-size: .88rem; font-weight: 700;
+  cursor: pointer; transition: background .15s, transform .15s;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.btn-mw-save:hover { background: #0a5f67; transform: translateY(-1px); }
+.btn-mw-cancel {
+  padding: 10px 18px; background: #f0f5f6; color: #2d5f68;
+  border: none; border-radius: 10px; font-size: .88rem; font-weight: 600;
+  cursor: pointer; transition: background .15s;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.btn-mw-cancel:hover { background: #dce9ec; }
+</style>
+
+<div class="mw-modal-overlay" id="globalSchedModal">
+  <div class="mw-modal">
+    <div class="mw-modal-head">
+      <div class="mw-modal-title">
+        <i class="fas fa-syringe"></i> Schedule Immunization
+      </div>
+      <button class="mw-modal-close" onclick="globalCloseModal()" type="button">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <form action="{{ url_for('immunization_schedule') }}" method="POST" id="globalSchedForm">
+      <div class="mw-modal-body">
+
+        <!-- Patient search -->
+        <div class="mw-form-group mb-3">
+          <label class="mw-label">Patient <span class="req">*</span></label>
+          <div class="g-patient-search-wrap">
+            <i class="fas fa-search g-search-icon"></i>
+            <input type="text" class="mw-input" id="gPatientSearch"
+                   placeholder="Type to search patient…" autocomplete="off">
+            <input type="hidden" name="patient_id" id="gPatientId">
+            <div class="g-patient-dropdown" id="gPatientDropdown"></div>
+          </div>
+          <span class="mw-hint">Search by patient name</span>
+        </div>
+
+        <!-- Vaccine + Dose -->
+        <div class="mw-form-grid mb-3">
+          <div class="mw-form-group">
+            <label class="mw-label">Vaccine <span class="req">*</span></label>
+            <select name="vaccine_name" class="mw-input" id="gVaccineSelect" required>
+              <option value="">— Select vaccine —</option>
+              <option>BCG</option>
+              <option>Hepatitis B (Birth Dose)</option>
+              <option>Pentavalent (DPT-HepB-Hib)</option>
+              <option>OPV (Oral Polio)</option>
+              <option>IPV (Inactivated Polio)</option>
+              <option>PCV (Pneumococcal)</option>
+              <option>MMR</option>
+              <option>Varicella</option>
+              <option>Tetanus Toxoid (TT)</option>
+              <option>Influenza</option>
+              <option value="__other__">Other (specify below)</option>
+            </select>
+          </div>
+          <div class="mw-form-group">
+            <label class="mw-label">Dose</label>
+            <select name="dose_number" class="mw-input">
+              <option value="1">1st Dose</option>
+              <option value="2">2nd Dose</option>
+              <option value="3">3rd Dose</option>
+              <option value="booster">Booster</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Other vaccine (hidden by default) -->
+        <div class="mw-form-group mb-3" id="gOtherVaxGroup" style="display:none;">
+          <label class="mw-label">Specify Vaccine <span class="req">*</span></label>
+          <input type="text" name="vaccine_name_other" class="mw-input"
+                 placeholder="Enter vaccine name" id="gOtherVaxInput">
+        </div>
+
+        <!-- Date + Time -->
+        <div class="mw-form-grid mb-3">
+          <div class="mw-form-group">
+            <label class="mw-label">Scheduled Date <span class="req">*</span></label>
+            <input type="date" name="scheduled_date" class="mw-input" id="gSchedDate" required>
+          </div>
+          <div class="mw-form-group">
+            <label class="mw-label">Time <span style="color:#8faeb5;font-weight:400;">(optional)</span></label>
+            <input type="time" name="scheduled_time" class="mw-input">
+          </div>
+        </div>
+
+        <!-- Administered by + Location -->
+        <div class="mw-form-grid mb-3">
+          <div class="mw-form-group">
+            <label class="mw-label">Administered By</label>
+            <input type="text" name="administered_by" class="mw-input"
+                   value="{{ current_user.username }}" placeholder="Nurse / Midwife name">
+          </div>
+          <div class="mw-form-group">
+            <label class="mw-label">Location / Site</label>
+            <input type="text" name="location" class="mw-input"
+                   placeholder="e.g. Barangay Health Center">
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="mw-form-group">
+          <label class="mw-label">Notes / Remarks</label>
+          <textarea name="notes" class="mw-input" rows="2"
+                    placeholder="Special instructions or observations…"
+                    style="resize:vertical;"></textarea>
+        </div>
+
+      </div>
+
+      <div class="mw-modal-foot">
+        <button type="button" class="btn-mw-cancel" onclick="globalCloseModal()">Cancel</button>
+        <button type="button" class="btn-mw-save" onclick="globalSubmitSched()">
+          <i class="fas fa-calendar-check me-2"></i>Confirm Schedule
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+/* ── GLOBAL IMMUNIZATION MODAL ─────────────────── */
+function globalCloseModal() {
+    document.getElementById('globalSchedModal').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+// Close on backdrop click
+document.getElementById('globalSchedModal').addEventListener('click', function(e) {
+    if (e.target === this) globalCloseModal();
+});
+
+// Close on Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') globalCloseModal();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Set min date to today
+    const dp = document.getElementById('gSchedDate');
+    if (dp) dp.min = new Date().toISOString().split('T')[0];
+
+    // Patient search
+    const searchInput = document.getElementById('gPatientSearch');
+    const dropdown    = document.getElementById('gPatientDropdown');
+    const hiddenId    = document.getElementById('gPatientId');
+    let timer;
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(timer);
+            const q = searchInput.value.trim();
+            const forceOpenAll = searchInput.dataset.openAllOnIcon === '1';
+            hiddenId.value = '';
+            if (q.length < 2 && !forceOpenAll) { dropdown.classList.remove('open'); return; }
+
+            timer = setTimeout(function() {
+                fetch('/search_patients?q=' + encodeURIComponent(q))
+                    .then(function(r) { return r.json(); })
+                    .then(function(list) {
+                        dropdown.innerHTML = '';
+                        if (!list.length) {
+                            dropdown.innerHTML = '<div class="g-patient-opt" style="color:#8faeb5;cursor:default;">No patients found</div>';
+                        } else {
+                            list.forEach(function(p) {
+                                const el = document.createElement('div');
+                                el.className = 'g-patient-opt';
+                                el.innerHTML =
+                                    '<i class="fas fa-user-circle" style="color:#c4d5d9;font-size:15px;"></i>' +
+                                    '<div>' +
+                                        '<div class="g-patient-opt-name">' + p.full_name + '</div>' +
+                                        '<div class="g-patient-opt-meta">' + p.purok + ' &bull; ' + p.gender + ' &bull; DOB: ' + p.birth_date + '</div>' +
+                                    '</div>';
+                                el.addEventListener('click', function() {
+                                    searchInput.value = p.full_name;
+                                    hiddenId.value    = p.id;
+                                    dropdown.classList.remove('open');
+                                });
+                                dropdown.appendChild(el);
+                            });
+                        }
+                        dropdown.classList.add('open');
+                    })
+                    .catch(function() {});
+            }, 260);
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.g-patient-search-wrap')) dropdown.classList.remove('open');
+        });
+    }
+
+    // Vaccine "Other" toggle
+    const vaccSel  = document.getElementById('gVaccineSelect');
+    const otherGrp = document.getElementById('gOtherVaxGroup');
+    const otherInp = document.getElementById('gOtherVaxInput');
+    if (vaccSel) {
+        vaccSel.addEventListener('change', function() {
+            const isOther = vaccSel.value === '__other__';
+            otherGrp.style.display = isOther ? 'flex' : 'none';
+            if (otherInp) otherInp.required = isOther;
+        });
+    }
+});
+
+function globalSubmitSched() {
+    const pid  = document.getElementById('gPatientId').value;
+    const vacc = document.getElementById('gVaccineSelect').value;
+    const dt   = document.getElementById('gSchedDate').value;
+
+    if (!pid)  { alert('Please select a patient.'); return; }
+    if (!vacc) { alert('Please select a vaccine.'); return; }
+    if (!dt)   { alert('Please choose a scheduled date.'); return; }
+
+    if (vacc === '__other__') {
+        const other = document.getElementById('gOtherVaxInput').value.trim();
+        if (!other) { alert('Please specify the vaccine name.'); return; }
+        const real = document.createElement('input');
+        real.type = 'hidden'; real.name = 'vaccine_name'; real.value = other;
+        document.getElementById('globalSchedForm').appendChild(real);
+        document.getElementById('gVaccineSelect').name = '_vax_hidden';
+    }
+
+    document.getElementById('globalSchedForm').submit();
+}
+</script>
+
+{% endif %}
